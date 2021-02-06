@@ -144,22 +144,25 @@ public class Application {
 	 */
 	private void saveBugFixingCommits(List<Link> links,String projectName){
 		try {
-			PrintWriter printWriter = new PrintWriter(new File( projectName+"_BugFixingCommit.csv"));
-			printWriter.println("commitsSha;commitTs;commitComment;issueKey;issueOpen;issueClose;issueTitle");
-			String pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
-		    SimpleDateFormat format = new SimpleDateFormat(pattern);
-			for (Link l : links){
-				String row = l.transaction.getId() + ";"
-						+    format.format(l.transaction.getTimeStamp()) + ";"
-						+    l.transaction.getComment() + ";"
-						+    projectName+"-"+l.issue.getId()	+";"
-						+    format.format(new Date(l.issue.getOpen())) + ";"
-					    +    format.format(new Date(l.issue.getClose())) + ";"
-					    +    l.issue.getTitle()
-						;
-				printWriter.println(row);				
+
+			File bugFixingCommitsFile = new File( projectName+"_BugFixingCommit.csv");
+			if(!bugFixingCommitsFile.exists()) {
+				PrintWriter printWriter = new PrintWriter(bugFixingCommitsFile);
+				printWriter.println("commitsSha;commitTs;commitComment;issueKey;issueOpen;issueClose;issueTitle");
+				String pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+				SimpleDateFormat format = new SimpleDateFormat(pattern);
+				for (Link l : links) {
+					String row = l.transaction.getId() + ";"
+							+ format.format(l.transaction.getTimeStamp()) + ";"
+							+ l.transaction.getComment() + ";"
+							+ projectName + "-" + l.issue.getId() + ";"
+							+ format.format(new Date(l.issue.getOpen())) + ";"
+							+ format.format(new Date(l.issue.getClose())) + ";"
+							+ l.issue.getTitle();
+					printWriter.println(row);
+				}
+				printWriter.close();
 			}
-			printWriter.close();
 			
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block

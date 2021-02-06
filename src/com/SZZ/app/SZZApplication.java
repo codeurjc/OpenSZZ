@@ -42,11 +42,14 @@ public class SZZApplication {
 			case "-all":
 				Git git;
 				try {
-					String[] array = args[2].split("/jira/projects/");
-					String projectName = args[3];
-					String jiraUrl = array[0] + jiraAPI;
-					JiraRetriever jr1 = new JiraRetriever(jiraUrl, projectName);
-					jr1.printIssues();
+					File jiraIssuesFile = new File(args[3] + "_0.csv");
+					if(!jiraIssuesFile.exists()) {
+						String[] array = args[2].split("/jira/projects/");
+						String projectName = args[3];
+						String jiraUrl = array[0] + jiraAPI;
+						JiraRetriever jr1 = new JiraRetriever(jiraUrl, projectName);
+						jr1.printIssues();
+					}
 
 				} catch (Exception e) {
 					break;
@@ -61,7 +64,7 @@ public class SZZApplication {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				clean(args[3]);
+//				clean(args[3]);
 				break;
 			default:
 				System.out.println("Commands are not in the right form! Please retry!");
