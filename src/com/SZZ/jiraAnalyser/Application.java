@@ -16,29 +16,29 @@ import com.SZZ.jiraAnalyser.entities.*;
 import com.SZZ.jiraAnalyser.git.JiraRetriever;
 
 public class Application {
-	
-	
-	
+
+
+
 	public  URL sourceCodeRepository;
 	public  URL bugTracker;
-	
+
 	private final TransactionManager transactionManager = new TransactionManager();
 	private final LinkManager linkManager = new LinkManager();
     public boolean hasFinished = false;
-    
+
     private String projectName;
-	
-    
+
+
     public Application(){}
-		
-	
+
+
 	public boolean mineData(String git, String jira, String projectName, String token) throws MalformedURLException {
 		this.sourceCodeRepository = new URL(git);
 		this.bugTracker = new URL(jira);
 		this.projectName = projectName;
-		
+
 		try {
-		
+
 		System.out.println("Downloading Git logs for project " + projectName);
 		List<Transaction> transactions = transactionManager.getBugFixingCommits(sourceCodeRepository,projectName);
 		System.out.println("Git logs downloaded for project " + projectName);
@@ -70,33 +70,33 @@ public class Application {
 		catch(Exception e){
 			return  false;
 		}
-		
+
 		return  true;
 	}
-	
+
 	/**
 	 * It prints a table summarying the results of the analysis
 	 * @param links
 	 */
 	private void printData(List<Link> links){
-		int[][] multi = new int[4][7];	
+		int[][] multi = new int[4][7];
 		for (int row = 0; row < 4; row ++)
 		    for (int col = 0; col < 7; col++)
 		    	multi[row][col] = 0;
-		multi[0][0]  = 0;	
-		multi[1][0]  = 1;	
+		multi[0][0]  = 0;
+		multi[1][0]  = 1;
 		multi[2][0]  = 2;
-		
+
 		for (Link l : links){
 			int row = l.getSyntacticConfidence();
 			int column = l.getSemanticConfidence();
 			column++;
-			multi[row][column]++;	
+			multi[row][column]++;
 			multi[row][6]++;
 			multi[3][column]++;
 			multi[3][6]++;
 		}
-		
+
 		String print = "\n";
 		print += String.format("%-16s%-16s%-16s%-16s%-16s%-16s%-16s","syn / sem", "0", "1", "2", "3", "4","total");
 		print += "\n";
@@ -113,21 +113,19 @@ public class Application {
 		print += String.format("%-16d%-16d%-16d%-16d%-16d%-16d%-16d", multi[3][0], multi[3][1], multi[3][2], multi[3][3], multi[3][4], multi[3][5],multi[3][6]);
 		System.out.println(print);
 	}
-	
+
 	/*
 	 * Only Links with sem > 1 OR ( sem = 1 AND syn > 0) must be considered
 	 */
 	private void discartLinks(List<Link> links){
 		List<Link> linksToDelete = new LinkedList<Link>();
-		for (Link l : links){
-			if (l.getSemanticConfidence() < 1 && (l.getSemanticConfidence() != 1 ||  l.getSyntacticConfidence() < 0)) {
-				linksToDelete.add(l);
-				}
-			else
-				if (l.transaction.getTimeStamp().getTime() > l.issue.getClose()){
-					linksToDelete.add(l);
-				}
-		}
+		for (Link l : links) {
+            if (l.issue != null && !l.issue.getType().equals("Bug")
+                    || !(l.getSemanticConfidence() > 1 || (l.getSemanticConfidence() == 1 || l.getSyntacticConfidence() > 0))
+                    || l.transaction.getTimeStamp().getTime() > l.issue.getClose()) {
+                linksToDelete.add(l);
+            }
+        }
 		String print = "\n";
 		print += "\n";
 		print += String.format("%s", "--------------------------------------------------------------------------------------------------------------");
@@ -136,7 +134,7 @@ public class Application {
 		System.out.println(print);
 		links.removeAll(linksToDelete);
 	}
-	
+
 	/**
 	 * It saves all bug fixing commits found on a file
 	 * @param links
@@ -163,19 +161,19 @@ public class Application {
 				}
 				printWriter.close();
 			}
-			
+
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}}
-		
+
 		private void calculateBugInducingCommits(List<Link> links,String projectName, String token){
 			System.out.println("Calculating Bug Inducing Commits");
 			int count = links.size();
 			PrintWriter printWriter;
 			try {
 				printWriter = new PrintWriter(token+"_BugInducingCommits.csv");
-				printWriter.println("bugFixingId;bugFixingTs;bugFixingfileChanged;bugInducingId;bugInducingTs;issueType");
+				printWriter.println("bugFixingId;bugFixingTs;bugFixingfileChanged;bugInducingId;bugInducingTs;issueId");
 				for (Link l : links){
 					if (count % 100 == 0)
 						System.out.println(count + " Commits left");
@@ -183,14 +181,13 @@ public class Application {
 					String pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 			        SimpleDateFormat format1 = new SimpleDateFormat(pattern);
 			        for (Suspect s : l.getSuspects()){
-			        	printWriter.println();
 			        	printWriter.println(
-			        			l.transaction.getId() + ";" + 
+			        			l.transaction.getId() + ";" +
 			        			format1.format(l.transaction.getTimeStamp()) +";" +
 			        			s.getFileName()		+ ";" +
 			        			s.getCommitId()     + ";" +
 			        			format1.format(s.getTs()) +";"+
-			        			l.issue.getType()
+			        			l.issue.getId()
 			        			);
 			        }
 			        count--;
@@ -200,8 +197,8 @@ public class Application {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 				System.out.println((e.getStackTrace()));
-			}	
+			}
 
-		
+
 	}
 }
