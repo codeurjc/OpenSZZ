@@ -52,6 +52,7 @@ public class Application {
 		System.out.println("Calculating bug fixing commits for project " + projectName);
 		List<Link> links = linkManager.getLinks(transactions, projectName, null);
 		printData(links);
+		System.out.println("Discart links");
 		discartLinks(links);
 		saveBugFixingCommits(links,projectName);
 		System.out.println("Bug fixing commits for project " + projectName + "calculated");
@@ -118,21 +119,27 @@ public class Application {
 	 * Only Links with sem > 1 OR ( sem = 1 AND syn > 0) must be considered
 	 */
 	private void discartLinks(List<Link> links){
-		List<Link> linksToDelete = new LinkedList<Link>();
-		for (Link l : links) {
-            if (l.issue != null && !l.issue.getType().equals("Bug")
-                    || !(l.getSemanticConfidence() > 1 || (l.getSemanticConfidence() == 1 || l.getSyntacticConfidence() > 0))
-                    || l.transaction.getTimeStamp().getTime() > l.issue.getClose()) {
-                linksToDelete.add(l);
-            }
-        }
-		String print = "\n";
-		print += "\n";
-		print += String.format("%s", "--------------------------------------------------------------------------------------------------------------");
-		print += "\n";
-		print+=("Links removed too low score (sem > 1 v (sem = 1 and syn > 0)): "+ linksToDelete.size() +" ("+ ((double)linksToDelete.size()/(double)links.size())*100 + "%)");
-		System.out.println(print);
-		links.removeAll(linksToDelete);
+			List<Link> linksToDelete = new LinkedList<Link>();
+			for (Link l : links) {
+				try {
+					if (l.issue == null
+							|| !l.issue.getType().equals("Bug")
+							|| !(l.getSemanticConfidence() > 1 || (l.getSemanticConfidence() == 1 || l.getSyntacticConfidence() > 0))
+							|| l.transaction.getTimeStamp().getTime() > l.issue.getClose()) {
+							linksToDelete.add(l);
+						}
+				} catch (NullPointerException e) {
+					linksToDelete.add(l);
+					e.printStackTrace();
+				}
+			}
+			String print = "\n";
+			print += "\n";
+			print += String.format("%s", "--------------------------------------------------------------------------------------------------------------");
+			print += "\n";
+			print += ("Links removed too low score (sem > 1 v (sem = 1 and syn > 0)): " + linksToDelete.size() + " (" + ((double) linksToDelete.size() / (double) links.size()) * 100 + "%)");
+			System.out.println(print);
+			links.removeAll(linksToDelete);
 	}
 
 	/**
@@ -187,7 +194,7 @@ public class Application {
 			        			s.getFileName()		+ ";" +
 			        			s.getCommitId()     + ";" +
 			        			format1.format(s.getTs()) +";"+
-			        			l.issue.getId()
+								projectName + "-" + l.issue.getId()
 			        			);
 			        }
 			        count--;

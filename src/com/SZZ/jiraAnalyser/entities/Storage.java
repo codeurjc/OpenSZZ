@@ -2,6 +2,7 @@ package  com.SZZ.jiraAnalyser.entities;
 
 import java.io.File;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -45,8 +46,8 @@ public class Storage {
 		if(mGit.find()) {
 			this.git = new Git(fileStoragePath, url);
 			try {
-				File bugFixingCommitsFile = new File(projectName + ".txt");
-				if(!bugFixingCommitsFile.exists()) {
+				File bugFixingCommitsFile = new File(git.workingDirectory.toString() + ".txt");
+				if(!Files.exists(bugFixingCommitsFile.toPath())) {
 					this.git.cloneRepository();
 					this.git.pullUpdates();
 					this.git.saveLog();
