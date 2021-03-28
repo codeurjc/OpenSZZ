@@ -63,6 +63,6 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" name="com.github.tsantalis:refactoring-miner:2.0.3" level="project" />
+    <orderEntry type="library" name="com.github.tsantalis:refactoring-miner:2.1.0" level="project" />
   </component>
 </module>

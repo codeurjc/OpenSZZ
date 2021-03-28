@@ -5,21 +5,22 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import gr.uom.java.xmi.LocationInfo;
+import gr.uom.java.xmi.decomposition.VariableDeclaration;
+import gr.uom.java.xmi.diff.*;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 
- import  com.SZZ.jiraAnalyser.entities.*;
 import com.SZZ.jiraAnalyser.entities.Issue.Resolution;
 import com.SZZ.jiraAnalyser.entities.Transaction.FileInfo;
 import  com.SZZ.jiraAnalyser.git.*;
+import org.refactoringminer.api.*;
+import org.refactoringminer.rm1.GitHistoryRefactoringMinerImpl;
+import org.refactoringminer.util.GitServiceImpl;
 
 
 public class Link {
@@ -43,8 +44,8 @@ public class Link {
 	 * with the bug
 	 * 
 	 * @param t
-	 * @param b
 	 * @param number
+	 * @param projectName
 	 */
 	public Link(Transaction t, long number, String projectName) {
 		this.transaction = t;
@@ -244,26 +245,37 @@ public class Link {
 		return this.semanticConfidence;
 	}
 
+	private List<Integer> removeRefactoringLines(ArrayList<CodeRange> refactoringCodeRanges, String filename, List<Integer> linesMinus) {
+		for (CodeRange codeRange: refactoringCodeRanges) {
+			if (codeRange.getFilePath().equals(filename)) {
+				linesMinus.removeIf(n -> n >= codeRange.getStartLine() && n <= codeRange.getEndLine());
+			}
+		}
+		return linesMinus;
+	}
+
 	/**
 	 * For each modified file it calculates the suspect
-	 * 
+	 *
 	 * @param git
 	 */
-	public void calculateSuspects(Git git, PrintWriter l) {
+	public void calculateSuspects(Git git, RefactoringMiner refactoringMiner) throws Exception {
+		ArrayList<CodeRange> refactoringCodeRanges = refactoringMiner.getRefactoringCodeRangesForTransaction(transaction);
 		for (FileInfo fi : transaction.getFiles()) {
 			if (fi.filename.endsWith(".java")) {
-					String diff = git.getDiff(transaction.getId(), fi.filename, l);
-					if (diff == null)
-						continue;
-					List<Integer> linesMinus = git.getLinesMinus(diff);
-					if (linesMinus == null || linesMinus.size() == 0)
-						continue;
-					String previousCommit = git.getPreviousCommit(transaction.getId(), fi.filename,l);
-					if (previousCommit != null) {
-						Suspect s = getSuspect(previousCommit, git, fi.filename, linesMinus,l);
-						if (s != null)
-							this.suspects.add(s);
-					}
+				String diff = git.getDiff(transaction.getId(), fi.filename);
+				if (diff == null)
+					continue;
+				List<Integer> linesMinus = git.getLinesMinus(diff);
+				if (linesMinus == null || linesMinus.size() == 0)
+					continue;
+				linesMinus = this.removeRefactoringLines(refactoringCodeRanges, fi.filename, linesMinus);
+				String previousCommit = git.getPreviousCommit(transaction.getId(), fi.filename);
+				if (previousCommit != null) {
+					Suspect s = getSuspect(previousCommit, git, fi.filename, linesMinus);
+					if (s != null)
+						this.suspects.add(s);
+				}
 			}
 		}
 	}
@@ -277,7 +289,7 @@ public class Link {
 	 * @param linesMinus
 	 * @return
 	 */
-	private Suspect getSuspect(String previous, Git git, String fileName, List<Integer> linesMinus, PrintWriter l) {
+	private Suspect getSuspect(String previous, Git git, String fileName, List<Integer> linesMinus) {
     	RevCommit closestCommit = null; 
     	long tempDifference = Long.MAX_VALUE; 
     	for (int i : linesMinus){ 
@@ -285,7 +297,7 @@ public class Link {
     			String sha = git.getBlameAt(previous,fileName,i);
     			if (sha == null)
     				break;
-    			RevCommit commit = git.getCommit(sha,l); 
+    			RevCommit commit = git.getCommit(sha);
     			long difference =(issue.getOpen()/1000) - (commit.getCommitTime()); 
     			if (difference > 0){ 
     				if (difference < tempDifference ){
@@ -294,7 +306,6 @@ public class Link {
     				}
     			} catch (Exception e){ 
     				e.printStackTrace();
-    				l.println(e);
     			}
     	} 
     	if (closestCommit != null){ 

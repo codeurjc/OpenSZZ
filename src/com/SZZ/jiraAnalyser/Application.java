@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,13 +15,16 @@ import java.util.concurrent.Future;
 
 import com.SZZ.jiraAnalyser.entities.*;
 import com.SZZ.jiraAnalyser.git.JiraRetriever;
+import org.eclipse.jgit.lib.Repository;
+import org.refactoringminer.api.GitService;
+import org.refactoringminer.util.GitServiceImpl;
 
 public class Application {
 
 
 
-	public  URL sourceCodeRepository;
-	public  URL bugTracker;
+	public URL sourceCodeRepository;
+	public URL bugTracker;
 
 	private final TransactionManager transactionManager = new TransactionManager();
 	private final LinkManager linkManager = new LinkManager();
@@ -181,10 +185,17 @@ public class Application {
 			try {
 				printWriter = new PrintWriter(token+"_BugInducingCommits.csv");
 				printWriter.println("bugFixingId;bugFixingTs;bugFixingfileChanged;bugInducingId;bugInducingTs;issueId");
+
+				String repositoryDirectory = this.transactionManager.getGit().workingDirectory.toString();
+				String repositoryUrl = this.sourceCodeRepository.toString();
+				GitService gitService = new GitServiceImpl();
+				Repository repository = gitService.cloneIfNotExists(repositoryDirectory,repositoryUrl);
+				RefactoringMiner refactoringMiner = new RefactoringMiner(repository);
+
 				for (Link l : links){
 					if (count % 100 == 0)
 						System.out.println(count + " Commits left");
-					l.calculateSuspects(transactionManager.getGit(),null);
+					l.calculateSuspects(transactionManager.getGit(),refactoringMiner);
 					String pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 			        SimpleDateFormat format1 = new SimpleDateFormat(pattern);
 			        for (Suspect s : l.getSuspects()){
@@ -198,7 +209,7 @@ public class Application {
 			        			);
 			        }
 			        count--;
-			}
+				}
 				printWriter.close();
 			} catch (Exception e) {
 				// TODO Auto-generated catch block

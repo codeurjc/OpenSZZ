@@ -183,7 +183,7 @@ public class Git {
 	   * @param fileName
 	   * @return
 	   */
-	  public  String getDiff (String shaCommit, String fileName, PrintWriter l)  {
+	  public  String getDiff (String shaCommit, String fileName)  {
 		String result = "";
 		File  localRepo1 = new File(workingDirectory+"");
 		try {
@@ -221,7 +221,6 @@ public class Git {
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			l.println(e);
 			return null;
 		}
 	    return result;
@@ -312,7 +311,7 @@ public class Git {
 	   * It gets commit object starting from a specific sha
 	   *
 	   */
-	  public RevCommit getCommit(String sha, PrintWriter l){
+	  public RevCommit getCommit(String sha){
 		  File  localRepo1 = new File(workingDirectory+"");
 		  //Repository repository = git.getRepository();
 		  RevCommit commit = null;
@@ -325,7 +324,6 @@ public class Git {
 			  //System.out.println(commit.getCommitTime());
 			} catch (Exception e) {
 				e.printStackTrace();
-				l.println((e));
 				return null;
 			}
 		  return commit;
@@ -337,7 +335,7 @@ public class Git {
 	   * @param file
 	   * @return
 	   */
-	  public String getPreviousCommit (String sha, String file, PrintWriter l){
+	  public String getPreviousCommit (String sha, String file){
 		  if (sha.equals("a8da84c614ba6e6e87c6c91e0c426ddfec2766a2"))
 			  System.out.println();
 		  File  localRepo1 = new File(workingDirectory+"");
@@ -348,7 +346,7 @@ public class Git {
 		  try {
 			org.eclipse.jgit.api.Git git = org.eclipse.jgit.api.Git.open(localRepo1);
 			RevWalk revWalk = new RevWalk( git.getRepository() );
-		    RevCommit revCommit = getCommit(sha, null);
+		    RevCommit revCommit = getCommit(sha);
 		    revWalk.markStart( revCommit );
 		    revWalk.sort( RevSort.COMMIT_TIME_DESC );
 		    revWalk.setTreeFilter( AndTreeFilter.create( PathFilter.create( path ), TreeFilter.ANY_DIFF ) );
@@ -361,7 +359,7 @@ public class Git {
 		    finalSha =  latestCommit.getName();
 
 		  } catch (Exception e) {
-			 l.println("No Predecessor-Commits found for "+sha +"for file " + file);
+			  e.printStackTrace();
 			return null;
 		}
 		  return finalSha;
