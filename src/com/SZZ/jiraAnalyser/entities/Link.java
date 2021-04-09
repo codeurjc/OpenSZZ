@@ -254,6 +254,12 @@ public class Link {
 		return linesMinus;
 	}
 
+	private boolean isCodeFile(FileInfo file) {
+		if (!file.filename.contains(".")) return false;
+		List<String> extensionsToIgnore = Arrays.asList("txt","md");
+		return extensionsToIgnore.stream().noneMatch(extension -> file.filename.endsWith("." + extension));
+	}
+
 	/**
 	 * For each modified file it calculates the suspect
 	 *
@@ -262,7 +268,7 @@ public class Link {
 	public void calculateSuspects(Git git, RefactoringMiner refactoringMiner) throws Exception {
 		ArrayList<CodeRange> refactoringCodeRanges = refactoringMiner.getRefactoringCodeRangesForTransaction(transaction);
 		for (FileInfo fi : transaction.getFiles()) {
-			if (fi.filename.endsWith(".java")) {
+			if (isCodeFile(fi)) {
 				String diff = git.getDiff(transaction.getId(), fi.filename);
 				if (diff == null)
 					continue;
