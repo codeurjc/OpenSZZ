@@ -199,11 +199,12 @@ public class RefactoringMiner {
     private ArrayList<CodeRange> removeCodeRangeDuplicates(ArrayList<CodeRange> refactoringChanges) {
         ArrayList<CodeRange> filteredList = new ArrayList<CodeRange>();
         for (CodeRange a : refactoringChanges) {
+            if (a == null) continue;
             Boolean contains = false;
             for (CodeRange b : filteredList)
                 if (areCodeRangesEqual(a,b)) {
                     contains = true;
-                    break;
+                    continue;
                 }
             if(!contains) {
                 filteredList.add(a);
@@ -213,9 +214,9 @@ public class RefactoringMiner {
     }
 
     private Boolean areCodeRangesEqual(CodeRange a, CodeRange b) {
-        return a.getStartLine() == b.getStartLine()
-            && a.getEndLine() == b.getEndLine()
-            && Objects.equals(a.getFilePath(), b.getFilePath());
+        return Objects.equals(a.getStartLine(),b.getStartLine())
+            && Objects.equals(a.getEndLine(),b.getEndLine())
+            && Objects.equals(a.getFilePath(),b.getFilePath());
     }
 
     private Boolean areClassesEqualIgnoringName(UMLClass a, UMLClass b) {
@@ -226,8 +227,8 @@ public class RefactoringMiner {
     }
 
     private Boolean areVariablesEqualIgnoringName(VariableDeclaration a, VariableDeclaration b) {
-        return a.equalVariableDeclarationType(b)
-            && a.getInitializer().equalFragment(b.getInitializer())
+        return Objects.equals(a.getType(),b.getType())
+            && Objects.equals(a.getInitializer(),b.getInitializer())
             && Objects.equals(a.getAnnotations(),b.getAnnotations());
     }
 
@@ -235,14 +236,14 @@ public class RefactoringMiner {
         return Objects.equals(a.getAnnotations(),b.getAnnotations())
             && Objects.equals(a.getName(),b.getName())
             && Objects.equals(a.getType(),b.getType())
-            && a.isStatic() == b.isStatic()
-            && a.getVariableDeclaration().getInitializer().equalFragment(b.getVariableDeclaration().getInitializer());
+            && Objects.equals(a.isStatic(), b.isStatic())
+            && Objects.equals(a.getVariableDeclaration().getInitializer(),b.getVariableDeclaration().getInitializer());
     }
 
     private Boolean areAttributesEqualIgnoringNameFinalAndVisibility(UMLAttribute a, UMLAttribute b) {
         return Objects.equals(a.getAnnotations(),b.getAnnotations())
             && Objects.equals(a.getType(),b.getType())
-            && a.isStatic() == b.isStatic()
-            && a.getVariableDeclaration().getInitializer().equalFragment(b.getVariableDeclaration().getInitializer());
+            && Objects.equals(a.isStatic(), b.isStatic())
+            && Objects.equals(a.getVariableDeclaration().getInitializer(),b.getVariableDeclaration().getInitializer());
     }
 }
