@@ -203,8 +203,8 @@ public class Application {
 			        			l.transaction.getId() + ";" +
 			        			format1.format(l.transaction.getTimeStamp()) +";" +
 			        			s.getFileName()		+ ";" +
-			        			s.getCommitId()     + ";" +
-			        			format1.format(s.getTs()) +";"+
+								(s.getCommitId() == null ? "" : s.getCommitId()) + ";" +
+								(s.getTs() == null ? "" : format1.format(s.getTs())) + ";" +
 								projectName + "-" + l.issue.getId()
 			        			);
 			        }

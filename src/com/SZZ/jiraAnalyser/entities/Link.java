@@ -273,8 +273,11 @@ public class Link {
 				String previousCommit = git.getPreviousCommit(transaction.getId(), fi.filename);
 				if (previousCommit != null) {
 					Suspect s = getSuspect(previousCommit, git, fi.filename, linesMinus);
-					if (s != null)
+					if (s != null) {
 						this.suspects.add(s);
+					} else {
+						this.suspects.add(new Suspect(null,null, fi.filename));
+					}
 				}
 			}
 		}
