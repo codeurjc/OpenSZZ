@@ -11,10 +11,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -125,7 +122,8 @@ public class Git {
 		Process p = pb.start();
         p.waitFor();
 	}
-	public List<Transaction> getCommits() {
+
+	public List<Transaction> getCommits(String message) {
 		List<Transaction> transactions = new ArrayList<Transaction>();
 		
 		 String line="";
@@ -136,10 +134,13 @@ public class Git {
 		       if (!line.isEmpty() && line.startsWith("\'")){
 		    	   line = line.replaceAll("\'", "");
 		    	   String[] array = line.split(";");
+				   String comment = array[3];
+
+				   if (message != null && !comment.toLowerCase().contains(message.toLowerCase())) continue;
+
 		    	   hashId = array[0];
 				   String timestamp = array[1];
 				   String author = array[2];
-				   String comment = array[3];
 		       List<FileInfo> filesAffected = new ArrayList<FileInfo>();
 		       line1 = br.readLine();
 		       if (line1 != null){
@@ -177,6 +178,10 @@ public class Git {
 		}
 
 		return transactions;
+	}
+
+	public List<Transaction> getCommits() {
+		return getCommits(null);
 	}
 
 	  /**

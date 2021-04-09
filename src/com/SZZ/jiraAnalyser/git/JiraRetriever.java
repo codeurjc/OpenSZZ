@@ -16,6 +16,7 @@ import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -75,7 +76,7 @@ public class JiraRetriever {
 	}
 
 	private int getTotalNumberIssues() {
-		String tempQuery = "?jqlQuery=project+%3D+{0}+ORDER+BY+key+DESC&tempMax=1";
+		String tempQuery = "?jqlQuery=project+%3D+{0}+ORDER+BY+key+DESC&issuetype=Bug&tempMax=1";
 		tempQuery = tempQuery.replace("{0}", projectName);
 		try {
 			url = new URL(jiraURL + tempQuery);
@@ -114,7 +115,7 @@ public class JiraRetriever {
 		}
 
 		while (true) {
-			String tempQuery = "?jqlQuery=project+%3D+{0}+ORDER+BY+key+ASC&tempMax=1000&pager/start={1}";
+			String tempQuery = "?jqlQuery=project+%3D+{0}+ORDER+BY+key+ASC&issuetype=Bug&tempMax=1000&pager/start={1}";
 			tempQuery = tempQuery.replace("{0}", projectName);
 			tempQuery = tempQuery.replace("{1}", ((page) * 1000) + "");
 			if (totalePages >= (page + 1))
@@ -158,14 +159,14 @@ public class JiraRetriever {
 	}
 
 	private void printHeader(PrintWriter pw) {
-		String header = "issueKey;title;resolution;status;assignee;createdDateEpoch;resolvedDateEpoch;type;attachments;priority;comments;";
+		String header = "issueKey;title;resolution;status;assignee;createdDateEpoch;resolvedDateEpoch;type;attachments;brokenBy;comments;";
 		pw.println(header);
 	}
 
 	/**
 	 * 
 	 * @param doc
-	 * @param nodeName
+	 * @param pw
 	 * @return
 	 */
 	private void printIssuesOfPage(Document doc, PrintWriter pw) {
@@ -174,15 +175,14 @@ public class JiraRetriever {
 		for (int i = 0; i < descNodes.getLength(); i++) {
 			Node node = descNodes.item(i);
 			String issueKey = "";
-			String priority = "";
 			String title = "";
 			String resolution = "";
 			String status = "";
 			String assignee = "";
-			String commentsString = "";
 			String type = "";
 			long createdDateEpoch = 0;
 			long resolvedDateEpoch = 0;
+			List<String> brokenBy = new LinkedList<String>();
 			NodeList children = node.getChildNodes();
 			List<String> attachmentsList = new LinkedList<String>();
 			List<String> commentsList = new LinkedList<String>();
@@ -218,9 +218,6 @@ public class JiraRetriever {
 				case "status":
 					status = children.item(p).getTextContent();
 					break;
-				case "priority":
-					priority = children.item(p).getTextContent();
-					break;
 				case "assignee":
 					assignee = children.item(p).getTextContent();
 					break;
@@ -232,7 +229,6 @@ public class JiraRetriever {
 					break;
 				case "attachments":
 					NodeList attachments = children.item(p).getChildNodes();
-					// System.out.println(attachments.getLength());
 					for (int u = 0; u < attachments.getLength(); u++) {
 						Node attachment = attachments.item(u);
 						NamedNodeMap attchmentName = attachment.getAttributes();
@@ -245,11 +241,31 @@ public class JiraRetriever {
 				case "type":
 					type = children.item(p).getTextContent();
 					break;
+				case "issuelinks":
+					NodeList issueLinkTypes = children.item(p).getChildNodes();
+					for (int t = 0; t < issueLinkTypes.getLength(); t++) {
+						NodeList nodes = issueLinkTypes.item(t).getChildNodes();
+						for (int n = 0; n < nodes.getLength(); n++) {
+							Node issueLinkTypeChild = nodes.item(n);
+							if (issueLinkTypeChild.getAttributes() != null
+									&& issueLinkTypeChild.getAttributes().getNamedItem("description") != null
+									&& issueLinkTypeChild.getAttributes().getNamedItem("description").getNodeValue().equals("is broken by")
+							) {
+								NodeList brokenByLinks = issueLinkTypeChild.getChildNodes();
+								for (int b = 0; b < brokenByLinks.getLength(); b++) {
+									Node brokenByLinksNode = brokenByLinks.item(b);
+									if (Objects.equals(brokenByLinksNode.getNodeName(), "issuelink")) {
+										brokenBy.add(brokenByLinksNode.getChildNodes().item(1).getTextContent());
+									}
+								}
+							}
+						}
+					}
+					break;
 				}
 			}
-			String toPrint = issueKey + ";" + title + ";" + resolution + ";" + status + ";" + assignee + ";"
-					+ createdDateEpoch + ";" + resolvedDateEpoch + ";" + type + ";" + attachmentsList.toString() + ";"
-					+ priority + ";";
+		String toPrint = issueKey + ";" + title + ";" + resolution + ";" + status + ";" + assignee + ";"
+					+ createdDateEpoch + ";" + resolvedDateEpoch + ";" + type + ";" + String.join(",",attachmentsList) + ";" + String.join(",",brokenBy) + ";";
 			for (String comment : commentsList) {
 				toPrint += comment.replace(";", "").replace(":", "").replace(".", "").replace(",", "").replace("\n", "")
 						.replace("\r", "").replace("\t", "") + ";";

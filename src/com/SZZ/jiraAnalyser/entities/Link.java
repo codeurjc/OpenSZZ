@@ -4,23 +4,17 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-import gr.uom.java.xmi.LocationInfo;
-import gr.uom.java.xmi.decomposition.VariableDeclaration;
-import gr.uom.java.xmi.diff.*;
-import org.eclipse.jgit.lib.Repository;
+import gr.uom.java.xmi.diff.CodeRange;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import com.SZZ.jiraAnalyser.entities.Issue.Resolution;
 import com.SZZ.jiraAnalyser.entities.Transaction.FileInfo;
 import  com.SZZ.jiraAnalyser.git.*;
-import org.refactoringminer.api.*;
-import org.refactoringminer.rm1.GitHistoryRefactoringMinerImpl;
-import org.refactoringminer.util.GitServiceImpl;
 
 
 public class Link {
@@ -35,7 +29,7 @@ public class Link {
 	private int semanticConfidence = 0;
 
 	private List<Suspect> suspects = new LinkedList<Suspect>();
-	
+
 
 
 	/**
@@ -190,8 +184,9 @@ public class Link {
 				if (sCurrentLine.startsWith(projectName + "-" + number)) {
 					String[] s = sCurrentLine.split(";");
 					List<String> comments = new LinkedList<String>();
-					List<String> attachments = Arrays.asList(s[7].replace("[", "").replace("]", ""));
-					int i = 8;
+					List<String> attachments = Arrays.asList(s[8]);
+					List<String> brokenBy = s[9].length() > 0 ? Arrays.asList(s[9]) : new LinkedList<>();
+					int i = 9;
 					while (i < s.length) {
 						comments.add(s[i]);
 						i++;
@@ -200,7 +195,7 @@ public class Link {
 					Resolution resolution = Resolution.NONE;
 					
 					try{
-						Issue.Status.valueOf(s[3].toUpperCase());
+						status = Issue.Status.valueOf(s[3].toUpperCase());
 					}
 					catch(Exception e){
 						status = Issue.Status.UNCONFIRMED;
@@ -214,7 +209,7 @@ public class Link {
 					}
 					
 					issue = new Issue(number, s[1], status,resolution, s[4],
-							Long.parseLong(s[5]), Long.parseLong(s[6]),attachments, comments,s[7]);
+							Long.parseLong(s[5]), Long.parseLong(s[6]),attachments, comments,s[7], brokenBy);
 					break;
 				}
 			}
@@ -266,7 +261,24 @@ public class Link {
 	 * @param git
 	 */
 	public void calculateSuspects(Git git, RefactoringMiner refactoringMiner) throws Exception {
-		ArrayList<CodeRange> refactoringCodeRanges = refactoringMiner.getRefactoringCodeRangesForTransaction(transaction);
+		if (this.issue.getBrokenBy().size() > 0) {
+			this.issue.getBrokenBy().stream()
+					.filter(issueId -> !issueId.equals(this.projectName + "-" + this.issue.getId()))
+					.forEach(issueId -> {
+						List<Transaction> transactions = git.getCommits(issueId);
+						if (transactions.size() > 0) {
+							List<Suspect> foundSuspects = transactions.stream()
+									.map(t -> new Suspect(t.getId(),t.getTimeStamp(),null))
+									.collect(Collectors.toList());
+							this.suspects.addAll(foundSuspects);
+						}
+					});
+			if (this.suspects.size() > 0) return;
+		}
+		ArrayList<CodeRange> refactoringCodeRanges = new ArrayList<>();
+		if (transaction.getFiles().stream().anyMatch(file -> file.filename.endsWith(".java"))) {
+			refactoringCodeRanges = refactoringMiner.getRefactoringCodeRangesForTransaction(transaction);
+		}
 		for (FileInfo fi : transaction.getFiles()) {
 			if (isCodeFile(fi)) {
 				String diff = git.getDiff(transaction.getId(), fi.filename);
@@ -275,7 +287,9 @@ public class Link {
 				List<Integer> linesMinus = git.getLinesMinus(diff);
 				if (linesMinus == null || linesMinus.size() == 0)
 					continue;
-				linesMinus = this.removeRefactoringLines(refactoringCodeRanges, fi.filename, linesMinus);
+				if (fi.filename.endsWith(".java")) {
+					linesMinus = this.removeRefactoringLines(refactoringCodeRanges, fi.filename, linesMinus);
+				}
 				String previousCommit = git.getPreviousCommit(transaction.getId(), fi.filename);
 				if (previousCommit != null) {
 					Suspect s = getSuspect(previousCommit, git, fi.filename, linesMinus);
@@ -305,7 +319,7 @@ public class Link {
     		try{ 
     			String sha = git.getBlameAt(previous,fileName,i);
     			if (sha == null)
-    				break;
+    				continue;
     			RevCommit commit = git.getCommit(sha);
     			long difference =(issue.getOpen()/1000) - (commit.getCommitTime()); 
     			if (difference > 0){ 

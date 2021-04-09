@@ -45,12 +45,13 @@ public class Issue {
 	private  List<String> comments;
 	private  String title;
 	private String type;
+	private List<String> brokenBy;
 	
 	
 	public Issue(
 			long id,String title,Status status,
 			Resolution resolution, String assignedTo,
-			long open,long close,List<String> attachments ,List<String> comments, String type) {
+			long open,long close,List<String> attachments ,List<String> comments, String type, List<String> brokenBy) {
 		this.id = id;
 		this.status = status;
 		this.resolution = resolution;
@@ -61,6 +62,7 @@ public class Issue {
 		this.comments = comments;
 		this.attachments = attachments;
 		this.type = type;
+		this.brokenBy = brokenBy;
 	}
 	
 	public long getId(){
@@ -100,6 +102,10 @@ public class Issue {
 	
 	public String getTitle(){
 		return this.title;
+	}
+
+	public List<String> getBrokenBy(){
+		return this.brokenBy;
 	}
 	
 	@Override
