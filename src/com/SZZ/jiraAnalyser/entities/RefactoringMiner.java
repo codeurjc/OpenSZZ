@@ -12,6 +12,7 @@ import org.refactoringminer.rm1.GitHistoryRefactoringMinerImpl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class RefactoringMiner {
     private GitHistoryRefactoringMiner miner;
@@ -22,8 +23,7 @@ public class RefactoringMiner {
         this.repository = repository;
     }
     public ArrayList<CodeRange> getRefactoringCodeRangesForTransaction(Transaction transaction) {
-        ArrayList<CodeRange> refactoringChanges = new ArrayList<CodeRange>(0);
-
+        ArrayList<CodeRange> refactoringChanges = new ArrayList<>(0);
         this.miner.detectAtCommit(this.repository, transaction.getId(), new RefactoringHandler() {
             @Override
             public void handle(String commitId, List<Refactoring> refactorings) {
@@ -147,6 +147,9 @@ public class RefactoringMiner {
                             Boolean areSignaturesEqual = renamedOperation.equalSignatureIgnoringOperationName(originalOperation);
                             if (areSignaturesEqual) {
                                 refactoringChanges.add(getOperationSignatureCodeRange(originalOperation));
+                                List<CodeRange> callReferencesCodeRanges = ((RenameOperationRefactoring) ref).getCallReferences()
+                                        .stream().map(c -> c.getInvokedOperationBefore().codeRange()).collect(Collectors.toList());
+                                refactoringChanges.addAll(callReferencesCodeRanges);
                             }
                             break;
                         }
@@ -197,7 +200,7 @@ public class RefactoringMiner {
     }
 
     private ArrayList<CodeRange> removeCodeRangeDuplicates(ArrayList<CodeRange> refactoringChanges) {
-        ArrayList<CodeRange> filteredList = new ArrayList<CodeRange>();
+        ArrayList<CodeRange> filteredList = new ArrayList<>();
         for (CodeRange a : refactoringChanges) {
             if (a == null) continue;
             Boolean contains = false;
