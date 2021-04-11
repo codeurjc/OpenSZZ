@@ -1,7 +1,11 @@
 package com.SZZ.jiraAnalyser.entities;
 
-import gr.uom.java.xmi.*;
+import gr.uom.java.xmi.UMLAttribute;
+import gr.uom.java.xmi.UMLClass;
+import gr.uom.java.xmi.UMLJavadoc;
+import gr.uom.java.xmi.UMLOperation;
 import gr.uom.java.xmi.decomposition.VariableDeclaration;
+import gr.uom.java.xmi.diff.CodeRange;
 import gr.uom.java.xmi.diff.*;
 import org.eclipse.jgit.lib.Repository;
 import org.refactoringminer.api.GitHistoryRefactoringMiner;
