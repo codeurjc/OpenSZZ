@@ -184,9 +184,9 @@ public class Link {
 				if (sCurrentLine.startsWith(projectName + "-" + number)) {
 					String[] s = sCurrentLine.split(";");
 					List<String> comments = new LinkedList<String>();
-					List<String> attachments = Arrays.asList(s[8]);
-					List<String> brokenBy = s[9].length() > 0 ? Arrays.asList(s[9]) : new LinkedList<>();
-					int i = 9;
+					List<String> attachments = Arrays.asList(s[8].replace("[", "").replace("]", ""));
+					List<String> brokenBy = Arrays.asList(s[9].replace("[", "").replace("]", ""));
+					int i = 10;
 					while (i < s.length) {
 						comments.add(s[i]);
 						i++;

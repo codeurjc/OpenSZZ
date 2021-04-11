@@ -265,7 +265,7 @@ public class JiraRetriever {
 				}
 			}
 		String toPrint = issueKey + ";" + title + ";" + resolution + ";" + status + ";" + assignee + ";"
-					+ createdDateEpoch + ";" + resolvedDateEpoch + ";" + type + ";" + String.join(",",attachmentsList) + ";" + String.join(",",brokenBy) + ";";
+					+ createdDateEpoch + ";" + resolvedDateEpoch + ";" + type + ";" + attachmentsList.toString() + ";" + brokenBy.toString() + ";";
 			for (String comment : commentsList) {
 				toPrint += comment.replace(";", "").replace(":", "").replace(".", "").replace(",", "").replace("\n", "")
 						.replace("\r", "").replace("\t", "") + ";";
