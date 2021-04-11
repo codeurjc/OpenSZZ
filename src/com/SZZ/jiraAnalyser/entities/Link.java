@@ -9,7 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import gr.uom.java.xmi.diff.CodeRange;
+import gr.uom.java.xmi.diff.*;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import com.SZZ.jiraAnalyser.entities.Issue.Resolution;
@@ -184,8 +184,16 @@ public class Link {
 				if (sCurrentLine.startsWith(projectName + "-" + number)) {
 					String[] s = sCurrentLine.split(";");
 					List<String> comments = new LinkedList<String>();
-					List<String> attachments = Arrays.asList(s[8].replace("[", "").replace("]", ""));
-					List<String> brokenBy = Arrays.asList(s[9].replace("[", "").replace("]", ""));
+					List<String> attachments = new LinkedList<String>();
+					List<String> brokenBy = new LinkedList<String>();
+					String attachmentsString = s[8].replace("[", "").replace("]", "");
+					if (attachmentsString.length() > 0) {
+						attachments = Arrays.asList(attachmentsString);
+					}
+					String brokenByString = s[9].replace("[", "").replace("]", "");
+					if (brokenByString.length() > 0) {
+						brokenBy = Arrays.asList(brokenByString);
+					}
 					int i = 10;
 					while (i < s.length) {
 						comments.add(s[i]);

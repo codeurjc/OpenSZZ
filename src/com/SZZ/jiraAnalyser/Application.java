@@ -202,7 +202,7 @@ public class Application {
 			        	printWriter.println(
 			        			l.transaction.getId() + ";" +
 			        			format1.format(l.transaction.getTimeStamp()) +";" +
-			        			s.getFileName()		+ ";" +
+								(s.getFileName() == null ? "" : s.getFileName()) + ";" +
 								(s.getCommitId() == null ? "" : s.getCommitId()) + ";" +
 								(s.getTs() == null ? "" : format1.format(s.getTs())) + ";" +
 								projectName + "-" + l.issue.getId()
