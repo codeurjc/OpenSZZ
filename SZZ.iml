@@ -63,6 +63,15 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" name="com.github.tsantalis:refactoring-miner:2.1.0" level="project" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="file://$MODULE_DIR$/RefactoringMiner" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+        <jarDirectory url="file://$MODULE_DIR$/RefactoringMiner" recursive="false" />
+      </library>
+    </orderEntry>
   </component>
 </module>
