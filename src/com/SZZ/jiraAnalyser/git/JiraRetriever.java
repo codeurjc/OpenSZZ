@@ -3,14 +3,10 @@ package com.SZZ.jiraAnalyser.git;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.LinkedList;
@@ -21,7 +17,7 @@ import java.util.Objects;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.apache.log4j.Logger;
+import org.jsoup.Jsoup;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -159,8 +155,16 @@ public class JiraRetriever {
 	}
 
 	private void printHeader(PrintWriter pw) {
-		String header = "issueKey;title;resolution;status;assignee;createdDateEpoch;resolvedDateEpoch;type;attachments;brokenBy;comments;";
+		String header = "issueKey;title;resolution;status;assignee;createdDateEpoch;resolvedDateEpoch;type;attachments;brokenBy;description;comments;";
 		pw.println(header);
+	}
+
+	private String getTextFromHtml(String str) {
+		return Jsoup.parse(str).body().text()
+				.replace(";", ".")
+				.replace("\n", "")
+				.replace("\r", "")
+				.replace("\t", "");
 	}
 
 	/**
@@ -176,6 +180,7 @@ public class JiraRetriever {
 			Node node = descNodes.item(i);
 			String issueKey = "";
 			String title = "";
+			String description = "";
 			String resolution = "";
 			String status = "";
 			String assignee = "";
@@ -185,7 +190,7 @@ public class JiraRetriever {
 			List<String> brokenBy = new LinkedList<String>();
 			NodeList children = node.getChildNodes();
 			List<String> attachmentsList = new LinkedList<String>();
-			List<String> commentsList = new LinkedList<String>();
+			String comments = "";
 			for (int p = 0; p < children.getLength(); p++) {
 				switch (children.item(p).getNodeName()) {
 				case "title":
@@ -222,10 +227,7 @@ public class JiraRetriever {
 					assignee = children.item(p).getTextContent();
 					break;
 				case "comments":
-					NodeList comments = children.item(p).getChildNodes();
-					for (int u = 0; u < comments.getLength(); u++) {
-						commentsList.add(children.item(p).getTextContent());
-					}
+					comments = getTextFromHtml(children.item(p).getTextContent());
 					break;
 				case "attachments":
 					NodeList attachments = children.item(p).getChildNodes();
@@ -241,7 +243,7 @@ public class JiraRetriever {
 				case "type":
 					type = children.item(p).getTextContent();
 					break;
-				case "issuelinks":
+				case "issuelinks": {
 					NodeList issueLinkTypes = children.item(p).getChildNodes();
 					for (int t = 0; t < issueLinkTypes.getLength(); t++) {
 						NodeList nodes = issueLinkTypes.item(t).getChildNodes();
@@ -263,15 +265,16 @@ public class JiraRetriever {
 					}
 					break;
 				}
-			}
-		String toPrint = issueKey + ";" + title + ";" + resolution + ";" + status + ";" + assignee + ";"
-					+ createdDateEpoch + ";" + resolvedDateEpoch + ";" + type + ";" + attachmentsList.toString() + ";" + brokenBy.toString() + ";";
-			for (String comment : commentsList) {
-				toPrint += comment.replace(";", "").replace(":", "").replace(".", "").replace(",", "").replace("\n", "")
-						.replace("\r", "").replace("\t", "") + ";";
-			}
-			pw.println(toPrint);
+				case "description": {
+					description = getTextFromHtml(children.item(p).getTextContent());
+					break;
+				}
+				}
 
+			}
+		String toPrint = issueKey + ";" + title + ";" + resolution + ";" + status + ";" + assignee + ";" + createdDateEpoch + ";" + resolvedDateEpoch
+				+ ";" + type + ";" + attachmentsList + ";" + brokenBy + ";[" + description + "];[" + comments + "];";
+			pw.println(toPrint);
 		}
 
 	}

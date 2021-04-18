@@ -319,56 +319,32 @@ public class Git {
 	   */
 	  public RevCommit getCommit(String sha){
 		  File  localRepo1 = new File(workingDirectory+"");
-		  //Repository repository = git.getRepository();
-		  RevCommit commit = null;
 		  try{
 			  org.eclipse.jgit.api.Git git = org.eclipse.jgit.api.Git.open(localRepo1);
 			  Repository repository = git.getRepository();
 			  RevWalk walk = new RevWalk( repository);
-			  ObjectId commitId = ObjectId.fromString( sha);
-			   commit = walk.parseCommit( commitId );
-			  //System.out.println(commit.getCommitTime());
+			  ObjectId commitId = ObjectId.fromString(sha);
+			  return walk.parseCommit(commitId);
 			} catch (Exception e) {
 				e.printStackTrace();
 				return null;
 			}
-		  return commit;
 	  }
 
 	  /**
-	   * Get Commit that changed the file before the parameter commit
+	   * Get Commit before the parameter commit
 	   * @param sha
-	   * @param file
 	   * @return
 	   */
-	  public String getPreviousCommit (String sha, String file){
-		  if (sha.equals("a8da84c614ba6e6e87c6c91e0c426ddfec2766a2"))
-			  System.out.println();
-		  File  localRepo1 = new File(workingDirectory+"");
-		  Iterable<RevCommit> iterable;
-		  String finalSha = "";
-		  RevCommit latestCommit = null;
-		  String path = file;
+	  public String getPreviousCommit (String sha){
 		  try {
-			org.eclipse.jgit.api.Git git = org.eclipse.jgit.api.Git.open(localRepo1);
-			RevWalk revWalk = new RevWalk( git.getRepository() );
 		    RevCommit revCommit = getCommit(sha);
-		    revWalk.markStart( revCommit );
-		    revWalk.sort( RevSort.COMMIT_TIME_DESC );
-		    revWalk.setTreeFilter( AndTreeFilter.create( PathFilter.create( path ), TreeFilter.ANY_DIFF ) );
-		    latestCommit = revWalk.next();
-		    while (!latestCommit.getName().equals(sha))
-		    	latestCommit = revWalk.next();
-		    latestCommit = revWalk.next();
-		    if (latestCommit == null)
-		    	return null;
-		    finalSha =  latestCommit.getName();
-
+		    RevCommit parent = revCommit.getParent(0);
+			return parent.getName();
 		  } catch (Exception e) {
 			  e.printStackTrace();
 			return null;
 		}
-		  return finalSha;
 	  }
 
 	private Boolean lineHasOnlyCommentWithoutCode(String s) {

@@ -46,6 +46,16 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="file://$MODULE_DIR$/RefactoringMiner" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+        <jarDirectory url="file://$MODULE_DIR$/RefactoringMiner" recursive="false" />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
       <library name="jira-api-7.9.0-QR-20180316142030.jar">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/jira-api-7.9.0-QR-20180316142030.jar!/" />
@@ -63,15 +73,6 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="file://$MODULE_DIR$/RefactoringMiner" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-        <jarDirectory url="file://$MODULE_DIR$/RefactoringMiner" recursive="false" />
-      </library>
-    </orderEntry>
+    <orderEntry type="library" name="org.jsoup:jsoup:1.13.1" level="project" />
   </component>
 </module>
