@@ -284,7 +284,11 @@ public class Link {
 				.filter(issueId -> !issueId.equals(this.projectName + "-" + this.issue.getId()))
 				.forEach(issueId -> {
 					List<Transaction> transactions = git.getCommits(issueId);
-					if (transactions.size() > 0) {
+					List<Transaction> filteredTransactions = transactions.stream().filter(t -> {
+						List<FileInfo> changedCodeFiles = t.getFiles().stream().filter(file -> isCodeFile(file)).collect(Collectors.toList());
+						return changedCodeFiles.size() > 0;
+					}).collect(Collectors.toList());
+					if (filteredTransactions.size() > 0) {
 						List<Suspect> foundSuspects = transactions.stream()
 								.map(t -> new Suspect(t.getId(),t.getTimeStamp(),null,source))
 								.collect(Collectors.toList());
