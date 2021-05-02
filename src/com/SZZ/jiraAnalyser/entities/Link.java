@@ -374,6 +374,8 @@ public class Link {
 				} else {
 					this.suspects.add(new Suspect(null,null, fi.filename, null));
 				}
+			} else {
+				this.suspects.add(new Suspect(null,null, fi.filename, "Ignored file type"));
 			}
 		}
 	}
