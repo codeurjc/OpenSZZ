@@ -184,7 +184,7 @@ public class Application {
 			PrintWriter printWriter;
 			try {
 				printWriter = new PrintWriter(token+"_BugInducingCommits.csv");
-				printWriter.println("bugFixingId;bugFixingTs;bugFixingfileChanged;bugInducingId;bugInducingTs;issueId");
+				printWriter.println("bugFixingId;bugFixingTs;bugFixingFileChanged;bugInducingId;bugInducingTs;issueId;note");
 
 				String repositoryDirectory = this.transactionManager.getGit().workingDirectory.toString();
 				String repositoryUrl = this.sourceCodeRepository.toString();
@@ -196,7 +196,7 @@ public class Application {
 					if (count % 100 == 0)
 						System.out.println(count + " Commits left");
 					l.calculateSuspects(transactionManager.getGit(),refactoringMiner);
-					String pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+					String pattern = "yyyy-MM-dd'T'HH:mm:ssZ";
 			        SimpleDateFormat format1 = new SimpleDateFormat(pattern);
 			        for (Suspect s : l.getSuspects()){
 			        	printWriter.println(
@@ -205,7 +205,8 @@ public class Application {
 								(s.getFileName() == null ? "" : s.getFileName()) + ";" +
 								(s.getCommitId() == null ? "" : s.getCommitId()) + ";" +
 								(s.getTs() == null ? "" : format1.format(s.getTs())) + ";" +
-								projectName + "-" + l.issue.getId()
+								projectName + "-" + l.issue.getId() + ";" +
+								(s.getNote() == null ? "" : s.getNote())
 			        			);
 			        }
 			        count--;

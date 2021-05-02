@@ -286,12 +286,12 @@ public class Link {
 					List<Transaction> transactions = git.getCommits(issueId);
 					if (transactions.size() > 0) {
 						List<Suspect> foundSuspects = transactions.stream()
-								.map(t -> new Suspect(t.getId(),t.getTimeStamp(),source))
+								.map(t -> new Suspect(t.getId(),t.getTimeStamp(),null,source))
 								.collect(Collectors.toList());
 						suspects.addAll(foundSuspects);
 					}
 				});
-		return suspects;
+		return suspects.stream().filter(distinctByKey(s -> s.getCommitId())).collect(Collectors.toSet());
 	}
 
 	private void setSuspectsByIssueDescriptionAndComments(Git git) {
@@ -348,22 +348,27 @@ public class Link {
 		for (FileInfo fi : transaction.getFiles()) {
 			if (isCodeFile(fi)) {
 				String diff = git.getDiff(transaction.getId(), fi.filename);
-				if (diff == null)
+				if (diff == null) {
+					this.suspects.add(new Suspect(null,null, null, "No changes in commit"));
 					continue;
-				List<Integer> linesMinus = git.getLinesMinus(diff);
-				if (linesMinus == null || linesMinus.size() == 0)
+				}
+				List<Integer> linesMinus = git.getLinesMinus(diff, fi.filename);
+				if (linesMinus == null || linesMinus.size() == 0) {
+					this.suspects.add(new Suspect(null,null, fi.filename, "No changed lines, only additions"));
 					continue;
+				}
 				if (fi.filename.endsWith(".java")) {
 					linesMinus = this.removeRefactoringLines(refactoringCodeRanges, fi.filename, linesMinus);
 				}
 				String previousCommit = git.getPreviousCommit(transaction.getId());
+				Suspect suspect = null;
 				if (previousCommit != null) {
-					Suspect s = getSuspect(previousCommit, git, fi.filename, linesMinus);
-					if (s != null && s.getCommitId() != transaction.getId()) {
-						this.suspects.add(s);
-					} else {
-						this.suspects.add(new Suspect(null,null, fi.filename));
-					}
+					suspect = getSuspect(previousCommit, git, fi.filename, linesMinus);
+				}
+				if (suspect != null && suspect.getCommitId() != transaction.getId()) {
+					this.suspects.add(suspect);
+				} else {
+					this.suspects.add(new Suspect(null,null, fi.filename, null));
 				}
 			}
 		}
@@ -406,7 +411,7 @@ public class Link {
 
 	private Suspect generateSuspect(RevCommit commit, String fileName) {
 		Long temp = Long.parseLong(commit.getCommitTime()+"") * 1000;
-		return new Suspect(commit.getName(), new Date(temp), fileName);
+		return new Suspect(commit.getName(), new Date(temp), fileName, null);
 	}
 
 }
