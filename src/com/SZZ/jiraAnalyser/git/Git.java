@@ -143,8 +143,7 @@ public class Git {
 				   String author = array[2];
 		       List<FileInfo> filesAffected = new ArrayList<FileInfo>();
 		       line1 = br.readLine();
-		       if (line1 != null){
-		       while (!(line1).equals("")){
+		       while (line1 != null && !(line1.equals(""))){
 		    	   int BUFFER_SIZE = 100000;
 		    	   br.mark(BUFFER_SIZE);
 		    	   if (!line1.startsWith("\'")){
@@ -159,7 +158,6 @@ public class Git {
 		    	   }
 		    	   line1 = br.readLine();
 
-		       }
 		       }
 		       Transaction transaction = new Transaction(
 						hashId,
