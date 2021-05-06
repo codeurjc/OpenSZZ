@@ -14,7 +14,7 @@ public class SZZApplication {
 
 	/* Get actual class name to be printed on */
 	
-	private static String jiraAPI = "/jira/sr/jira.issueviews:searchrequest-xml/temp/SearchRequest.xml";
+	private static String jiraAPI = "/sr/jira.issueviews:searchrequest-xml/temp/SearchRequest.xml";
 
 	public static void main(String[] args) throws Exception {
 
@@ -38,7 +38,7 @@ public class SZZApplication {
 				try {
 					File jiraIssuesFile = new File(args[3] + "_0.csv");
 					if(!jiraIssuesFile.exists()) {
-						String[] array = args[2].split("/jira/projects/");
+						String[] array = args[2].split("/projects/");
 						String projectName = args[3];
 						String jiraUrl = array[0] + jiraAPI;
 						JiraRetriever jr1 = new JiraRetriever(jiraUrl, projectName);
