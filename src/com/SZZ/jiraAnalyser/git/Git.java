@@ -312,15 +312,19 @@ public class Git {
 		}
 	  }
 
+	  public Repository getRepository() throws IOException {
+		  File  localRepo1 = new File(workingDirectory+"");
+		  org.eclipse.jgit.api.Git git = org.eclipse.jgit.api.Git.open(localRepo1);
+		  return git.getRepository();
+	  }
+
 	  /**
 	   * It gets commit object starting from a specific sha
 	   *
 	   */
 	  public RevCommit getCommit(String sha){
-		  File  localRepo1 = new File(workingDirectory+"");
 		  try{
-			  org.eclipse.jgit.api.Git git = org.eclipse.jgit.api.Git.open(localRepo1);
-			  Repository repository = git.getRepository();
+			  Repository repository = getRepository();
 			  RevWalk walk = new RevWalk( repository);
 			  ObjectId commitId = ObjectId.fromString(sha);
 			  return walk.parseCommit(commitId);

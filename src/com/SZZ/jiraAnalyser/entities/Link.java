@@ -13,13 +13,19 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import gr.uom.java.xmi.diff.CodeRange;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import com.SZZ.jiraAnalyser.entities.Issue.Resolution;
 import com.SZZ.jiraAnalyser.entities.Transaction.FileInfo;
 import  com.SZZ.jiraAnalyser.git.*;
+import org.incava.analysis.FileDiff;
+import org.incava.analysis.Report;
+import org.incava.ijdk.lang.Int;
+import org.incava.ijdk.text.LocationRange;
 
 
 public class Link {
@@ -263,15 +269,6 @@ public class Link {
 		return this.semanticConfidence;
 	}
 
-	private List<Integer> removeRefactoringLines(ArrayList<CodeRange> refactoringCodeRanges, String filename, List<Integer> linesMinus) {
-		for (CodeRange codeRange: refactoringCodeRanges) {
-			if (codeRange.getFilePath().equals(filename)) {
-				linesMinus.removeIf(n -> n >= codeRange.getStartLine() && n <= codeRange.getEndLine());
-			}
-		}
-		return linesMinus;
-	}
-
 	private boolean isCodeFile(FileInfo file) {
 		if (!file.filename.contains(".")) return false;
 		List<String> extensionsToIgnore = Arrays.asList("txt","md");
@@ -333,10 +330,62 @@ public class Link {
 		return result;
 	}
 
+	private boolean isInsideRefactoringRange(LocationRange change, CodeRange refRange) {
+		boolean startBelongsToRefactoringRange = change.getStart().line > refRange.getStartLine()
+				|| change.getStart().line == refRange.getStartLine() && change.getStart().column >= refRange.getStartColumn();
+		boolean endBelongsToRefactoringRange = change.getEnd().line < refRange.getEndLine()
+				|| change.getEnd().line == refRange.getEndLine() && change.getEnd().column >= refRange.getEndColumn();
+		boolean isInsideRefactoringRange = startBelongsToRefactoringRange && endBelongsToRefactoringRange;
+		return isInsideRefactoringRange;
+	}
+
+	private List<LocationRange> excludeRefactoringChanges(List<LocationRange> changes, ArrayList<CodeRange> refactoringCodeRanges, String filename) {
+		for (CodeRange refRange: refactoringCodeRanges) {
+			if (refRange.getFilePath().equals(filename)) {
+				changes.removeIf(change -> isInsideRefactoringRange(change, refRange));
+			}
+		}
+		return changes;
+	}
+
+	private List<Integer> getLinesMinusFromLocationRanges(List<LocationRange> changes) {
+		List<Integer> linesMinus = new LinkedList<>();
+		changes.forEach(change -> {
+			Integer startLine = change.getStart().line;
+			Integer endLine = change.getEnd().line;
+			if (startLine.equals(endLine)) {
+				linesMinus.add(startLine);
+			} else {
+				List<Integer> range = IntStream.rangeClosed(startLine, endLine).boxed().collect(Collectors.toList());
+				linesMinus.addAll(range);
+			}
+		});
+		return linesMinus;
+	}
+
+	private List<Integer> getLinesMinusForJavaFile(Git git, String fileName, ArrayList<CodeRange> refactoringCodeRanges) {
+		List<LocationRange> changes = DiffJWorker.getChanges(git,transaction.getId(),fileName);
+		if (changes.isEmpty()) return new LinkedList<>();
+		changes = this.excludeRefactoringChanges(changes, refactoringCodeRanges, fileName);
+		return getLinesMinusFromLocationRanges(changes);
+	}
+
+	private List<Integer> getLinesMinus(Git git, String fileName) {
+		List<Integer> linesMinus = new LinkedList<>();
+		String diff = git.getDiff(transaction.getId(), fileName);
+		if (diff == null) return linesMinus;
+		return git.getLinesMinus(diff, fileName);
+	}
+
+	private Boolean isJavaFile(FileInfo file) {
+		return file.filename.endsWith(".java");
+	}
+
 	/**
 	 * For each modified file it calculates the suspect
 	 *
 	 * @param git
+	 * @param refactoringMiner
 	 */
 	public void calculateSuspects(Git git, RefactoringMiner refactoringMiner) throws Exception {
 		suspects.addAll(getSuspectsByAddressedIssues(this.issue.getBrokenBy(), git,"brokenBy"));
@@ -346,23 +395,17 @@ public class Link {
 		if (this.suspects.size() > 0) return;
 
 		ArrayList<CodeRange> refactoringCodeRanges = new ArrayList<>();
-		if (transaction.getFiles().stream().anyMatch(file -> file.filename.endsWith(".java"))) {
+		if (transaction.getFiles().stream().anyMatch(file -> isJavaFile(file))) {
 			refactoringCodeRanges = refactoringMiner.getRefactoringCodeRangesForTransaction(transaction);
 		}
 		for (FileInfo fi : transaction.getFiles()) {
 			if (isCodeFile(fi)) {
-				String diff = git.getDiff(transaction.getId(), fi.filename);
-				if (diff == null) {
-					this.suspects.add(new Suspect(null,null, null, "No changes in commit"));
+				List<Integer> linesMinus = isJavaFile(fi)
+						? getLinesMinusForJavaFile(git, fi.filename, refactoringCodeRanges)
+						: getLinesMinus(git, fi.filename);
+				if (linesMinus == null || linesMinus.isEmpty()) {
+					this.suspects.add(new Suspect(null, null, fi.filename, "No changed lines, only additions"));
 					continue;
-				}
-				List<Integer> linesMinus = git.getLinesMinus(diff, fi.filename);
-				if (linesMinus == null || linesMinus.size() == 0) {
-					this.suspects.add(new Suspect(null,null, fi.filename, "No changed lines, only additions"));
-					continue;
-				}
-				if (fi.filename.endsWith(".java")) {
-					linesMinus = this.removeRefactoringLines(refactoringCodeRanges, fi.filename, linesMinus);
 				}
 				String previousCommit = git.getPreviousCommit(transaction.getId());
 				Suspect suspect = null;
