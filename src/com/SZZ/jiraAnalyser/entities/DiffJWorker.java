@@ -28,20 +28,20 @@ import java.util.stream.Collectors;
 public class DiffJWorker {
 
     public static List<LocationRange> getChanges(Git git, String commitId, String fileName) {
-        try{
-            Repository repository = git.getRepository();
-            RevCommit commit = git.getCommit(commitId);
-            RevCommit parent = git.getCommit(commit.getParent(0).getName());
-            Report diffjReport = DiffJWorker.getReport(repository, commit, parent, fileName);
-            FileDiffs diffs = diffjReport.getDifferences();
-
-            List<FileDiff.Type> targetTypes = List.of(FileDiff.Type.DELETED, FileDiff.Type.CHANGED);
-            List<FileDiff> changes = diffs.stream().filter(diff -> targetTypes.contains(diff.getType())).collect(Collectors.toList());
-            return changes.stream().map(change -> change.getFirstLocation()).collect(Collectors.toList());
+        RevCommit commit = git.getCommit(commitId);
+        RevCommit parent = git.getCommit(commit.getParent(0).getName());
+        Report diffjReport;
+        try(Repository repository = org.eclipse.jgit.api.Git.open(git.workingDirectory).getRepository()){
+            diffjReport = DiffJWorker.getReport(repository, commit, parent, fileName);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
+        FileDiffs diffs = diffjReport.getDifferences();
+
+        List<FileDiff.Type> targetTypes = List.of(FileDiff.Type.DELETED, FileDiff.Type.CHANGED);
+        List<FileDiff> changes = diffs.stream().filter(diff -> targetTypes.contains(diff.getType())).collect(Collectors.toList());
+        return changes.stream().map(change -> change.getFirstLocation()).collect(Collectors.toList());
     }
 
     public static Report getReport(Repository repository, RevCommit commitFrom, RevCommit commitTo, String fileName) {
@@ -96,7 +96,6 @@ public class DiffJWorker {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                revWalk.dispose();
             }
         }
     }
