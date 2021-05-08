@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FilenameUtils;
 import org.eclipse.jgit.api.BlameCommand;
 import org.eclipse.jgit.blame.BlameResult;
 import org.eclipse.jgit.diff.DiffEntry;
@@ -246,7 +247,7 @@ public class Git {
 		     case '-':
 		    	 actualInt++;
 				 if (line.length() <= 1) break;
-				 if (filename.endsWith(".java") && lineHasOnlyCommentWithoutCode(line)) break;
+				 if (lineHasOnlyCommentWithoutCode(FilenameUtils.getExtension(filename).toLowerCase(), line.substring(1))) break;
 				 listMinus.add(actualInt);
 		    	 break;
 		     case '+':
@@ -345,9 +346,33 @@ public class Git {
 		}
 	  }
 
-	private Boolean lineHasOnlyCommentWithoutCode(String s) {
-		Pattern pattern = Pattern.compile("^-(\\s)*(\\/\\*(?!.*?\\*\\/)|\\/\\*.*?\\*\\/\\s*$|\\*|\\/\\/)");
-		Matcher matcher = pattern.matcher(s);
+	private static Boolean lineHasOnlyCommentWithoutCode(String fileExtension, String line) {
+		List<String> filesWithCStyleComments = List.of("c","java","cs","cpp","h","js","ts","swift","m","mm","r");
+		List<String> filesWithShellStyleComments = List.of("sh","bash","zsh","pl");
+		List<String> markupFiles = List.of("html","htm","xml");
+		List<String> cssFiles = List.of("css","sass","scss","less");
+
+		String regex = filesWithCStyleComments.contains(fileExtension)
+				? "^\\s*(//|/\\*(?!.*?\\*/)|/\\*.*?\\*/\\s*$|\\*)"
+				: filesWithShellStyleComments.contains(fileExtension)
+				? "^\\s*#"
+				: markupFiles.contains(fileExtension)
+				? "^\\s*(<!--(?!.*?-->)|<!--.*?-->\\s*$)"
+				: fileExtension.equals("py")
+				? "^\\s*(#|\"\"\"(?!.*?\"\"\")|\"\"\".*?\"\"\"\\s*$)"
+				: fileExtension.equals("sql")
+				? "^\\s*(--|/\\*(?!.*?\\*/)|/\\*.*?\\*/\\s*$|\\*)"
+				: fileExtension.equals("rb")
+				? "^\\s*(#|=begin(?!.*?=end)|=begin.*?=end\\s*$)"
+				: fileExtension.equals("php")
+				? "^\\s*(#|//|/\\*(?!.*?\\*/)|/\\*.*?\\*/\\s*$|\\*)"
+				: cssFiles.contains(fileExtension)
+				? "^\\s*(/\\*(?!.*?\\*/)|/\\*.*?\\*/\\s*$|\\*)"
+				: null;
+		if (regex == null) return false;
+
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(line);
 		return matcher.find();
 	}
 }
