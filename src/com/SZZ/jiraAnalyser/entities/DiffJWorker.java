@@ -1,14 +1,7 @@
 package com.SZZ.jiraAnalyser.entities;
 
 import com.SZZ.jiraAnalyser.git.Git;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.ObjectLoader;
-import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevTree;
-import org.eclipse.jgit.revwalk.RevWalk;
-import org.eclipse.jgit.treewalk.TreeWalk;
-import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.incava.analysis.FileDiff;
 import org.incava.analysis.FileDiffs;
 import org.incava.analysis.Report;
@@ -21,8 +14,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class DiffJWorker {
@@ -31,11 +24,11 @@ public class DiffJWorker {
         RevCommit commit = git.getCommit(commitId);
         RevCommit parent = git.getCommit(commit.getParent(0).getName());
         Report diffjReport;
-        try(Repository repository = org.eclipse.jgit.api.Git.open(git.workingDirectory).getRepository()){
-            diffjReport = DiffJWorker.getReport(repository, commit, parent, fileName);
+        try {
+            diffjReport = DiffJWorker.getReport(git, commit, parent, fileName);
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return new LinkedList<>();
         }
         FileDiffs diffs = diffjReport.getDifferences();
 
@@ -44,12 +37,14 @@ public class DiffJWorker {
         return changes.stream().map(change -> change.getFirstLocation()).collect(Collectors.toList());
     }
 
-    public static Report getReport(Repository repository, RevCommit commitFrom, RevCommit commitTo, String fileName) {
+    public static Report getReport(Git git, RevCommit commitFrom, RevCommit commitTo, String fileName) throws IOException {
         File fileTo = new File("diffj_to_" + commitTo.getName() + ".java");
-        saveFileContent(repository, commitTo, fileName, fileTo);
+        byte[] fileContentTo = git.getFileContent(commitTo, fileName);
+        saveFileContent(fileContentTo, fileTo);
 
-        File fileFrom = new File("diffj_from_" + commitFrom.getName() + ".java");
-        saveFileContent(repository, commitFrom, fileName, fileFrom);
+        File fileFrom = new File("diffj_from_" + commitTo.getName() + ".java");
+        byte[] fileContentFrom = git.getFileContent(commitTo, fileName);
+        saveFileContent(fileContentFrom, fileFrom);
 
         Options opts = new Options();
         String[] args = {fileTo.getPath(), fileFrom.getPath()};
@@ -70,33 +65,12 @@ public class DiffJWorker {
         return diffj.getReport();
     }
 
-    private static void saveFileContent(Repository repository, RevCommit commit, String fileName, File outputFile) {
-        try (RevWalk revWalk = new RevWalk(repository)) {
-            if (commit == null) {
-                try {
-                    outputFile.createNewFile();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            } else {
-                RevTree tree = commit.getTree();
-                try (TreeWalk treeWalk = new TreeWalk(repository)) {
-                    treeWalk.addTree(tree);
-                    treeWalk.setRecursive(true);
-                    treeWalk.setFilter(PathFilter.create(fileName));
-                    if (treeWalk.next()) {
-                        ObjectId objectId = treeWalk.getObjectId(0);
-                        ObjectLoader loader = repository.open(objectId);
-                        try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
-                            outputStream.write(loader.getBytes());
-                        }
-                    } else {
-                        outputFile.createNewFile();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
+    private static void saveFileContent(byte[] content, File outputFile) throws IOException {
+        if (content == null) outputFile.createNewFile();
+        try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
+            outputStream.write(content);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

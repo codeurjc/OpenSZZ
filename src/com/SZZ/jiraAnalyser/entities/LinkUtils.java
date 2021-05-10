@@ -153,7 +153,9 @@ public class LinkUtils {
 		List<Integer> linesMinus = new LinkedList<>();
 		String diff = git.getDiff(commitId, fileName);
 		if (diff == null) return linesMinus;
-		return git.getLinesMinus(diff, fileName);
+		List<Integer> commentLines = git.getCommentLines(commitId, fileName);
+		linesMinus = git.getLinesMinus(diff);
+		return linesMinus.stream().filter(line -> !commentLines.contains(line)).collect(Collectors.toList());
 	}
 
 

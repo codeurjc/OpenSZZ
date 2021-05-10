@@ -1,9 +1,6 @@
 package com.SZZ.jiraAnalyser.git;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileReader;
+import java.io.*;
 import java.lang.ProcessBuilder.Redirect;
 import java.net.URL;
 import java.nio.file.Files;
@@ -20,16 +17,18 @@ import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.RawTextComparator;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 
 import com.SZZ.jiraAnalyser.entities.*;
 import com.SZZ.jiraAnalyser.entities.Transaction.FileInfo;
-
-
+import org.eclipse.jgit.treewalk.TreeWalk;
+import org.eclipse.jgit.treewalk.filter.PathFilter;
 
 
 public class Git {
@@ -228,10 +227,9 @@ public class Git {
 	  /**
 	   * It gets removed lines from a commit starting from the diffString
 	   * @param diffString
-	   * @param filename
 	   * @return
 	   */
-	  public  List<Integer> getLinesMinus(String diffString, String filename){
+	  public  List<Integer> getLinesMinus(String diffString){
 
 		  int actualInt = 1;
 		  boolean actualSet = false;
@@ -247,7 +245,6 @@ public class Git {
 		     case '-':
 		    	 actualInt++;
 				 if (line.length() <= 1) break;
-				 if (lineHasOnlyCommentWithoutCode(FilenameUtils.getExtension(filename).toLowerCase(), line.substring(1))) break;
 				 listMinus.add(actualInt);
 		    	 break;
 		     case '+':
@@ -272,6 +269,34 @@ public class Git {
 		  }
 		  return listMinus;
 
+	  }
+
+	  public List<Integer> getCommentLines(String commitId, String fileName) {
+	  	RevCommit commit = getCommit(commitId);
+	  	byte[] fileContentBytes = getFileContent(commit, fileName);
+	  	FileContent fileContent = new FileContent(fileContentBytes, FilenameUtils.getExtension(fileName).toLowerCase());
+	  	return fileContent.getCommentLines();
+	  }
+
+	  public byte[] getFileContent(RevCommit commit, String fileName) {
+	  	byte[] fileContent = null;
+		  try(
+		  		Repository repository = org.eclipse.jgit.api.Git.open(workingDirectory).getRepository();
+				TreeWalk treeWalk = new TreeWalk(repository)
+		  ){
+			  RevTree tree = commit.getTree();
+			  treeWalk.addTree(tree);
+			  treeWalk.setRecursive(true);
+			  treeWalk.setFilter(PathFilter.create(fileName));
+			  if (treeWalk.next()) {
+				  ObjectId objectId = treeWalk.getObjectId(0);
+				  ObjectLoader loader = repository.open(objectId);
+				  fileContent = loader.getBytes();
+			  }
+		  } catch (Exception e) {
+			  e.printStackTrace();
+		  }
+		  return fileContent;
 	  }
 
 
@@ -345,34 +370,4 @@ public class Git {
 			return null;
 		}
 	  }
-
-	private static Boolean lineHasOnlyCommentWithoutCode(String fileExtension, String line) {
-		List<String> filesWithCStyleComments = List.of("c","java","cs","cpp","h","js","ts","swift","m","mm","r");
-		List<String> filesWithShellStyleComments = List.of("sh","bash","zsh","pl");
-		List<String> markupFiles = List.of("html","htm","xml");
-		List<String> cssFiles = List.of("css","sass","scss","less");
-
-		String regex = filesWithCStyleComments.contains(fileExtension)
-				? "^\\s*(//|/\\*(?!.*?\\*/)|/\\*.*?\\*/\\s*$|\\*)"
-				: filesWithShellStyleComments.contains(fileExtension)
-				? "^\\s*#"
-				: markupFiles.contains(fileExtension)
-				? "^\\s*(<!--(?!.*?-->)|<!--.*?-->\\s*$)"
-				: fileExtension.equals("py")
-				? "^\\s*(#|\"\"\"(?!.*?\"\"\")|\"\"\".*?\"\"\"\\s*$)"
-				: fileExtension.equals("sql")
-				? "^\\s*(--|/\\*(?!.*?\\*/)|/\\*.*?\\*/\\s*$|\\*)"
-				: fileExtension.equals("rb")
-				? "^\\s*(#|=begin(?!.*?=end)|=begin.*?=end\\s*$)"
-				: fileExtension.equals("php")
-				? "^\\s*(#|//|/\\*(?!.*?\\*/)|/\\*.*?\\*/\\s*$|\\*)"
-				: cssFiles.contains(fileExtension)
-				? "^\\s*(/\\*(?!.*?\\*/)|/\\*.*?\\*/\\s*$|\\*)"
-				: null;
-		if (regex == null) return false;
-
-		Pattern pattern = Pattern.compile(regex);
-		Matcher matcher = pattern.matcher(line);
-		return matcher.find();
-	}
 }
