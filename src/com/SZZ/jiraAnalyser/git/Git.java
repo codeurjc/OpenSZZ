@@ -265,7 +265,7 @@ public class Git {
 		  }
 		  }
 		  catch(Exception e){
-			  return null;
+		      e.printStackTrace();
 		  }
 		  return listMinus;
 
@@ -274,6 +274,7 @@ public class Git {
 	  public List<Integer> getCommentLines(String commitId, String fileName) {
 	  	RevCommit commit = getCommit(commitId);
 	  	byte[] fileContentBytes = getFileContent(commit, fileName);
+		if (fileContentBytes == null) return new LinkedList<>();
 	  	FileContent fileContent = new FileContent(fileContentBytes, FilenameUtils.getExtension(fileName).toLowerCase());
 	  	return fileContent.getCommentLines();
 	  }

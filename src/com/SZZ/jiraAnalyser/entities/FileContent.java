@@ -38,16 +38,16 @@ public class FileContent {
                 if (isBlockCommentFinished(line,fileExtension)) {
                     blockCommentStarted = false;
                 }
-                commentLines.add(i);
+                commentLines.add(i+1);
                 continue;
             }
             if (isBlockCommentStarted(line,fileExtension)) {
                 blockCommentStarted = true;
-                commentLines.add(i);
+                commentLines.add(i+1);
                 continue;
             }
             if (isInlineComment(line, fileExtension) || isSingleLineBlockComment(line, fileExtension)) {
-                commentLines.add(i);
+                commentLines.add(i+1);
                 continue;
             }
         }
