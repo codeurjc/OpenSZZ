@@ -88,7 +88,7 @@ public class FileContent {
                 : filesWithPythonStyleComments.contains(fileExtension)
                 ? "^\\s*(\"\"\"(?!.*?\"\"\")|\'\'\'(?!.*?\'\'\'))"
                 : fileExtension.equals("rb")
-                ? "^\\s*=begin(?!.*?=end"
+                ? "^\\s*=begin(?!.*?=end)"
                 : fileExtension.equals("pl")
                 ? "^="
                 : fileExtension.equals("coffee")
