@@ -1,5 +1,6 @@
 package  com.SZZ.jiraAnalyser.entities;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -143,7 +144,13 @@ public class LinkUtils {
 	}
 
 	public static List<Integer> getLinesMinusForJavaFile(Git git, String commitId, String fileName, ArrayList<CodeRange> refactoringCodeRanges) {
-		List<LocationRange> changes = DiffJWorker.getChanges(git,commitId,fileName);
+		List<LocationRange> changes = null;
+		try {
+			changes = DiffJWorker.getChanges(git,commitId,fileName);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return getLinesMinus(git, commitId, fileName);
+		}
 		if (changes.isEmpty()) return new LinkedList<>();
 		changes = excludeRefactoringChanges(changes, refactoringCodeRanges, fileName);
 		return getLinesMinusFromLocationRanges(changes);

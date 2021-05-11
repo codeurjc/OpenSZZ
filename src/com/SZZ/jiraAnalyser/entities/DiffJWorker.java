@@ -20,20 +20,14 @@ import java.util.stream.Collectors;
 
 public class DiffJWorker {
 
-    public static List<LocationRange> getChanges(Git git, String commitId, String fileName) {
+    public static List<LocationRange> getChanges(Git git, String commitId, String fileName) throws IOException {
         RevCommit commit = git.getCommit(commitId);
         RevCommit parent = git.getCommit(commit.getParent(0).getName());
-        Report diffjReport;
-        try {
-            diffjReport = DiffJWorker.getReport(git, commit, parent, fileName);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new LinkedList<>();
-        }
+        Report diffjReport = DiffJWorker.getReport(git, commit, parent, fileName);
         FileDiffs diffs = diffjReport.getDifferences();
 
         List<FileDiff.Type> targetTypes = List.of(FileDiff.Type.DELETED, FileDiff.Type.CHANGED);
-        List<FileDiff> changes = diffs.stream().filter(diff -> targetTypes.contains(diff.getType())).collect(Collectors.toList());
+        List<FileDiff> changes = diffs.stream().filter(diff -> targetTypes.contains(diff.getType()) && !diff.getMessage().equals("code changed in static block")).collect(Collectors.toList());
         return changes.stream().map(change -> change.getFirstLocation()).collect(Collectors.toList());
     }
 
@@ -42,12 +36,12 @@ public class DiffJWorker {
         byte[] fileContentTo = git.getFileContent(commitTo, fileName);
         saveFileContent(fileContentTo, fileTo);
 
-        File fileFrom = new File("diffj_from_" + commitTo.getName() + ".java");
-        byte[] fileContentFrom = git.getFileContent(commitTo, fileName);
+        File fileFrom = new File("diffj_from_" + commitFrom.getName() + ".java");
+        byte[] fileContentFrom = git.getFileContent(commitFrom, fileName);
         saveFileContent(fileContentFrom, fileFrom);
 
         Options opts = new Options();
-        String[] args = {fileTo.getPath(), fileFrom.getPath()};
+        String[] args = {fileFrom.getPath(), fileTo.getPath()};
         List<String> names = opts.process(Arrays.asList(args));
 
         DiffJ diffj = new DiffJ(opts.showBriefOutput(), opts.showContextOutput(), opts.highlightOutput(),
@@ -66,7 +60,10 @@ public class DiffJWorker {
     }
 
     private static void saveFileContent(byte[] content, File outputFile) throws IOException {
-        if (content == null) outputFile.createNewFile();
+        if (content == null) {
+            outputFile.createNewFile();
+            return;
+        }
         try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
             outputStream.write(content);
         } catch (Exception e) {
