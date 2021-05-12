@@ -119,6 +119,15 @@ public class LinkUtils {
 		return isInsideRefactoringRange;
 	}
 
+	public static List<Integer> removeRefactoringLines(ArrayList<CodeRange> refactoringCodeRanges, String filename, List<Integer> linesMinus) {
+		for (CodeRange codeRange: refactoringCodeRanges) {
+			if (codeRange.getFilePath().equals(filename)) {
+				linesMinus.removeIf(n -> n >= codeRange.getStartLine() && n <= codeRange.getEndLine());
+			}
+		}
+		return linesMinus;
+	}
+
 	private static List<LocationRange> excludeRefactoringChanges(List<LocationRange> changes, ArrayList<CodeRange> refactoringCodeRanges, String filename) {
 		for (CodeRange refRange: refactoringCodeRanges) {
 			if (refRange.getFilePath().equals(filename)) {
@@ -156,6 +165,10 @@ public class LinkUtils {
 		return getLinesMinusFromLocationRanges(changes);
 	}
 
+	public static List<Integer> getLinesMinusJava(Git git, String commitId, String fileName, ArrayList<CodeRange> refactoringCodeRanges) {
+		List<Integer> linesMinus = getLinesMinus(git, commitId, fileName);
+		return removeRefactoringLines(refactoringCodeRanges, fileName, linesMinus);
+	}
 	public static List<Integer> getLinesMinus(Git git, String commitId, String fileName) {
 		List<Integer> linesMinus = new LinkedList<>();
 		String diff = git.getDiff(commitId, fileName);
@@ -209,8 +222,10 @@ public class LinkUtils {
 	}
 
 	public static Boolean isJavaFile(FileInfo file) {
-		return file.filename.endsWith(".java");
+		return isJavaFile(file.filename);
 	}
+
+	private static Boolean isJavaFile(String filename) { return filename.endsWith(".java"); }
 
 	public static Suspect generateSuspect(RevCommit commit, String fileName) {
 		Long temp = Long.parseLong(commit.getCommitTime()+"") * 1000;

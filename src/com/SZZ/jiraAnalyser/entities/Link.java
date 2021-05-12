@@ -200,8 +200,11 @@ public class Link {
 		}
 		for (FileInfo fi : transaction.getFiles()) {
 			if (LinkUtils.isCodeFile(fi)) {
+//				List<Integer> linesMinus = LinkUtils.isJavaFile(fi)
+//						? LinkUtils.getLinesMinusForJavaFile(git, transaction.getId(), fi.filename, refactoringCodeRanges)
+//						: LinkUtils.getLinesMinus(git, transaction.getId(), fi.filename);
 				List<Integer> linesMinus = LinkUtils.isJavaFile(fi)
-						? LinkUtils.getLinesMinusForJavaFile(git, transaction.getId(), fi.filename, refactoringCodeRanges)
+						? LinkUtils.getLinesMinusJava(git, transaction.getId(), fi.filename, refactoringCodeRanges)
 						: LinkUtils.getLinesMinus(git, transaction.getId(), fi.filename);
 				if (linesMinus == null || linesMinus.isEmpty()) {
 					this.suspects.add(new Suspect(null, null, fi.filename, "No changed lines, only additions"));
