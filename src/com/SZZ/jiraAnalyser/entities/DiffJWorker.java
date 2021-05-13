@@ -7,6 +7,7 @@ import org.incava.analysis.FileDiffs;
 import org.incava.analysis.Report;
 import org.incava.diffj.app.DiffJ;
 import org.incava.diffj.app.Options;
+import org.incava.ijdk.text.Location;
 import org.incava.ijdk.text.LocationRange;
 
 import java.io.File;
@@ -27,10 +28,11 @@ public class DiffJWorker {
         FileDiffs diffs = diffjReport.getDifferences();
 
         List<FileDiff> changes = diffs.stream().filter(diff -> {
-            if (diff.getType().equals(FileDiff.Type.CHANGED) || diff.getType().equals(FileDiff.Type.DELETED)) return true;
-            return diff.getType().equals(FileDiff.Type.ADDED)
-                    && diff.getFirstLocation().getStart().line == diff.getSecondLocation().getStart().line
-                    && diff.getFirstLocation().getEnd().line == diff.getSecondLocation().getEnd().line;
+            if (!diff.getType().equals(FileDiff.Type.ADDED)) return true;
+            // ignore new added lines, but not to ignore code inserted into existing lines
+            Location start = diff.getFirstLocation().getStart();
+            Location end = diff.getFirstLocation().getEnd();
+            return start.line == end.line && start.column == end.column;
         }).collect(Collectors.toList());
         return changes.stream().map(change -> change.getFirstLocation()).collect(Collectors.toList());
     }
