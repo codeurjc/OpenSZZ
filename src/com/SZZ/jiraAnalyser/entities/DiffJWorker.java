@@ -23,11 +23,15 @@ public class DiffJWorker {
     public static List<LocationRange> getChanges(Git git, String commitId, String fileName) throws IOException {
         RevCommit commit = git.getCommit(commitId);
         RevCommit parent = git.getCommit(commit.getParent(0).getName());
-        Report diffjReport = DiffJWorker.getReport(git, commit, parent, fileName);
+        Report diffjReport = DiffJWorker.getReport(git, parent, commit, fileName);
         FileDiffs diffs = diffjReport.getDifferences();
 
-        List<FileDiff.Type> targetTypes = List.of(FileDiff.Type.DELETED, FileDiff.Type.CHANGED);
-        List<FileDiff> changes = diffs.stream().filter(diff -> targetTypes.contains(diff.getType()) && !diff.getMessage().equals("code changed in static block")).collect(Collectors.toList());
+        List<FileDiff> changes = diffs.stream().filter(diff -> {
+            if (diff.getType().equals(FileDiff.Type.CHANGED) || diff.getType().equals(FileDiff.Type.DELETED)) return true;
+            return diff.getType().equals(FileDiff.Type.ADDED)
+                    && diff.getFirstLocation().getStart().line == diff.getSecondLocation().getStart().line
+                    && diff.getFirstLocation().getEnd().line == diff.getSecondLocation().getEnd().line;
+        }).collect(Collectors.toList());
         return changes.stream().map(change -> change.getFirstLocation()).collect(Collectors.toList());
     }
 
