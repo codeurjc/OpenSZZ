@@ -76,7 +76,7 @@ public class JiraRetriever {
 	}
 
 	private int getTotalNumberIssues() {
-		String tempQuery = "?jqlQuery=project+%3D+{0}+ORDER+BY+key+DESC&tempMax=1";
+		String tempQuery = "?jqlQuery=project+%3D+{0}+and+issuetype%3DBug+ORDER+BY+key+DESC&tempMax=1";
 		tempQuery = tempQuery.replace("{0}", projectName);
 		try {
 			url = new URL(jiraURL + tempQuery);
@@ -115,10 +115,9 @@ public class JiraRetriever {
 		}
 
 		while (true) {
-			String tempQuery = "?jqlQuery=project+%3D+{0}+ORDER+BY+key+ASC&tempMax=1000&pager/start={1}";
+			String tempQuery = "?jqlQuery=project+%3D+{0}+and+issuetype%3DBug+ORDER+BY+key+ASC&tempMax=1000&pager/start={1}";
 			tempQuery = tempQuery.replace("{0}", projectName);
-			// tempQuery = tempQuery.replace("{1}", numberOfIssues + 1 + "");
-			tempQuery = tempQuery.replace("{1}", ((page) * 1000) + "");
+			tempQuery = tempQuery.replace("{1}", numberOfIssues + 1 + "");
 			if (totalePages >= (page + 1))
 				System.out.println("Download Jira issues. Page: " + (page + 1) + "/" + totalePages);
 			try {
@@ -207,7 +206,7 @@ public class JiraRetriever {
 					break;
 				case "key":
 					String key = children.item(p).getTextContent();
-					// if (getIssueIdFromKey(key) >= (pageNumber + 1) * 1000) break loop;
+					if (getIssueIdFromKey(key) >= (pageNumber + 1) * 1000) break loop;
 					issueKey = key;
 					break;
 				case "created":

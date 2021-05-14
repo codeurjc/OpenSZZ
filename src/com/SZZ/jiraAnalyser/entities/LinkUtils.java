@@ -44,25 +44,21 @@ public class LinkUtils {
 	}
 
 	public static Resolution getResolutionFromString(String str) {
-		Resolution resolution = Resolution.NONE;
 		try{
-			Resolution.valueOf(str.toUpperCase().replace(" ", "").replace("'", ""));
+			return Resolution.valueOf(str.toUpperCase().replace(" ", "").replace("'", ""));
 		}
 		catch(Exception e){
-			resolution = Resolution.NONE;
+			return Resolution.NONE;
 		}
-		return resolution;
 	}
 
 	public static Issue.Status getStatusFromString(String str) {
-		Issue.Status status;
 		try{
-			status = Issue.Status.valueOf(str.toUpperCase());
+			return Issue.Status.valueOf(str.toUpperCase());
 		}
 		catch(Exception e){
-			status = Issue.Status.UNCONFIRMED;
+			return Issue.Status.UNCONFIRMED;
 		}
-		return status;
 	}
 
 	public static Set<String> stringToSet(String str) {
