@@ -206,7 +206,7 @@ public class Link {
 				List<Integer> linesMinus = LinkUtils.getLinesMinus(git, transaction.getId(), fi.filename);
 				if (linesMinus == null || linesMinus.isEmpty()) {
 					this.suspects.add(new Suspect(null, null, fi.filename, "No changed lines, only additions"));
-					return;
+					continue;
 				}
 				String previousCommit = git.getPreviousCommit(transaction.getId());
 				Suspect suspect = null;
@@ -240,7 +240,7 @@ public class Link {
     		try{ 
     			String sha = git.getBlameAt(previous,fileName,i);
     			if (sha == null)
-    				break;
+    				continue;
     			RevCommit commit = git.getCommit(sha);
     			long difference =(issue.getOpen()/1000) - (commit.getCommitTime()); 
     			if (difference > 0){ 
