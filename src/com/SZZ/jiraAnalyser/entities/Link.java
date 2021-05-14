@@ -188,8 +188,8 @@ public class Link {
 	 * @param refactoringMiner
 	 */
 	public void calculateSuspects(Git git, RefactoringMiner refactoringMiner) throws Exception {
-		// suspects.addAll(LinkUtils.getSuspectsByAddressedIssues(this.issue.getBrokenBy(), this.projectName + this.issue.getId(), git,"brokenBy"));
-		// if (this.suspects.size() > 0) return;
+		suspects.addAll(LinkUtils.getSuspectsByAddressedIssues(this.issue.getBrokenBy(), this.projectName + this.issue.getId(), git,"brokenBy"));
+		if (this.suspects.size() > 0) return;
 
 		// suspects.addAll(LinkUtils.getSuspectsByIssueDescriptionAndComments(git, this.transaction.getId(), this.projectName, this.issue));
 		// if (this.suspects.size() > 0) return;
