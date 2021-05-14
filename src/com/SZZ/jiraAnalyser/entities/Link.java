@@ -191,8 +191,8 @@ public class Link {
 		suspects.addAll(LinkUtils.getSuspectsByAddressedIssues(this.issue.getBrokenBy(), this.projectName + this.issue.getId(), git,"brokenBy"));
 		if (this.suspects.size() > 0) return;
 
-		// suspects.addAll(LinkUtils.getSuspectsByIssueDescriptionAndComments(git, this.transaction.getId(), this.projectName, this.issue));
-		// if (this.suspects.size() > 0) return;
+		suspects.addAll(LinkUtils.getSuspectsByIssueDescriptionAndComments(git, this.transaction.getId(), this.projectName, this.issue));
+		if (this.suspects.size() > 0) return;
 
 		ArrayList<CodeRange> refactoringCodeRanges = new ArrayList<>();
 		if (transaction.getFiles().stream().anyMatch(file -> LinkUtils.isJavaFile(file))) {
