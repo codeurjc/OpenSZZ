@@ -319,7 +319,7 @@ public class Git {
 		}
 		try {
 			if (this.blame == null) return null;
-			RevCommit resultCommit = this.blame.getSourceCommit(lineNumber);
+			RevCommit resultCommit = this.blame.getSourceCommit(lineNumber - 1);
 			return resultCommit.getName();
 		} catch (Exception e) {
 			return null;
