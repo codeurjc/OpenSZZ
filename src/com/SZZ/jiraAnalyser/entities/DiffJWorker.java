@@ -7,7 +7,6 @@ import org.incava.analysis.FileDiffs;
 import org.incava.analysis.Report;
 import org.incava.diffj.app.DiffJ;
 import org.incava.diffj.app.Options;
-import org.incava.ijdk.text.Location;
 import org.incava.ijdk.text.LocationRange;
 
 import java.io.File;
@@ -15,7 +14,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,15 +24,10 @@ public class DiffJWorker {
         RevCommit parent = git.getCommit(commit.getParent(0).getName());
         Report diffjReport = DiffJWorker.getReport(git, parent, commit, fileName);
         FileDiffs diffs = diffjReport.getDifferences();
-
-        List<FileDiff> changes = diffs.stream().filter(diff -> {
-            if (!diff.getType().equals(FileDiff.Type.ADDED)) return true;
-            // ignore new added lines, but not to ignore code inserted into existing lines
-            Location start = diff.getFirstLocation().getStart();
-            Location end = diff.getFirstLocation().getEnd();
-            return start.line == end.line && start.column == end.column;
-        }).collect(Collectors.toList());
-        return changes.stream().map(change -> change.getFirstLocation()).collect(Collectors.toList());
+        return diffs.stream()
+                .filter(diff -> !diff.getType().equals(FileDiff.Type.ADDED))
+                .map(change -> change.getFirstLocation())
+                .collect(Collectors.toList());
     }
 
     public static Report getReport(Git git, RevCommit commitFrom, RevCommit commitTo, String fileName) throws IOException {
@@ -49,7 +42,6 @@ public class DiffJWorker {
         Options opts = new Options();
         String[] args = {fileFrom.getPath(), fileTo.getPath()};
         List<String> names = opts.process(Arrays.asList(args));
-
         DiffJ diffj = new DiffJ(opts.showBriefOutput(), opts.showContextOutput(), opts.highlightOutput(),
                                 opts.recurse(),
                                 opts.getFirstFileName(), opts.getFromSource(),
