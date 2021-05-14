@@ -312,10 +312,9 @@ public class Git {
 	   * @return
 	   */
 	  public String getBlameAt(String commitSha, String file, int lineNumber) {
-		// if (this.blame == null 
-		// 	|| !this.lastAnalysedCommit.equals(commitSha) 
-		// 	|| !this.lastAnalysedFile.equals(file)) {
-		if (this.blame == null) {
+		if (this.blame == null 
+			|| !this.lastAnalysedCommit.equals(commitSha) 
+			|| !this.lastAnalysedFile.equals(file)) {
 			resetBlameResult(commitSha, file);
 		}
 		try {
