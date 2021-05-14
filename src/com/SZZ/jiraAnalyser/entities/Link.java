@@ -195,15 +195,17 @@ public class Link {
 		// if (this.suspects.size() > 0) return;
 
 		ArrayList<CodeRange> refactoringCodeRanges = new ArrayList<>();
-		// if (transaction.getFiles().stream().anyMatch(file -> LinkUtils.isJavaFile(file))) {
-		// 	refactoringCodeRanges = refactoringMiner.getRefactoringCodeRangesForTransaction(transaction);
-		// }
+		if (transaction.getFiles().stream().anyMatch(file -> LinkUtils.isJavaFile(file))) {
+			refactoringCodeRanges = refactoringMiner.getRefactoringCodeRangesForTransaction(transaction);
+		}
 		for (FileInfo fi : transaction.getFiles()) {
 			if (LinkUtils.isCodeFile(fi)) {
+				// List<Integer> linesMinus = LinkUtils.isJavaFile(fi)
+				// 		? LinkUtils.getLinesMinusForJavaFile(git, transaction.getId(), fi.filename, refactoringCodeRanges)
+				// 		: LinkUtils.getLinesMinus(git, transaction.getId(), fi.filename);
 				List<Integer> linesMinus = LinkUtils.isJavaFile(fi)
-						? LinkUtils.getLinesMinusForJavaFile(git, transaction.getId(), fi.filename, refactoringCodeRanges)
+						? LinkUtils.getLinesMinusJava(git, transaction.getId(), fi.filename, refactoringCodeRanges)
 						: LinkUtils.getLinesMinus(git, transaction.getId(), fi.filename);
-				// List<Integer> linesMinus = LinkUtils.getLinesMinus(git, transaction.getId(), fi.filename);
 				if (linesMinus == null || linesMinus.isEmpty()) {
 					this.suspects.add(new Suspect(null, null, fi.filename, "No changed lines, only additions"));
 					continue;
