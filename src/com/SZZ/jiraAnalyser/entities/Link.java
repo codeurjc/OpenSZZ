@@ -244,7 +244,8 @@ public class Link {
     			if (sha == null)
     				continue;
     			RevCommit commit = git.getCommit(sha);
-    			long difference =(issue.getOpen()/1000) - (commit.getCommitTime()); 
+				RevCommit bugFixingCommit = git.getCommit(transaction.getId());
+				long difference = bugFixingCommit.getCommitTime() - commit.getCommitTime();
     			if (difference > 0){ 
     				if (difference < tempDifference ){
     					closestCommit = commit; 
