@@ -199,7 +199,7 @@ public class Link {
 		// 	refactoringCodeRanges = refactoringMiner.getRefactoringCodeRangesForTransaction(transaction);
 		// }
 		for (FileInfo fi : transaction.getFiles()) {
-			if (fi.filename.endsWith(".java")) {
+			if (LinkUtils.isCodeFile(fi)) {
 //				List<Integer> linesMinus = LinkUtils.isJavaFile(fi)
 //						? LinkUtils.getLinesMinusForJavaFile(git, transaction.getId(), fi.filename, refactoringCodeRanges)
 //						: LinkUtils.getLinesMinus(git, transaction.getId(), fi.filename);
