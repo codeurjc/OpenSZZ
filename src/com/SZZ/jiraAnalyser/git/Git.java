@@ -199,7 +199,7 @@ public class Git {
 		            .call();
 		    ByteArrayOutputStream out = new ByteArrayOutputStream();
 		    DiffFormatter df = new DiffFormatter(out);
-		    // df.setDiffComparator(RawTextComparator.WS_IGNORE_TRAILING);
+		    df.setDiffComparator(RawTextComparator.WS_IGNORE_TRAILING);
 		    df.setRepository(git.getRepository());
 
 		    for(DiffEntry diff : diffs)
@@ -244,7 +244,7 @@ public class Git {
 		     switch(line.charAt(0)){
 		     case '-':
 		    	 actualInt++;
-				//  if (line.length() <= 1) break;
+				 if (line.length() <= 1) break;
 				 listMinus.add(actualInt);
 		    	 break;
 		     case '+':
