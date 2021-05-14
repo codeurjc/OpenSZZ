@@ -199,7 +199,7 @@ public class Git {
 		            .call();
 		    ByteArrayOutputStream out = new ByteArrayOutputStream();
 		    DiffFormatter df = new DiffFormatter(out);
-		    df.setDiffComparator(RawTextComparator.WS_IGNORE_TRAILING);
+		    // df.setDiffComparator(RawTextComparator.WS_IGNORE_TRAILING);
 		    df.setRepository(git.getRepository());
 
 		    for(DiffEntry diff : diffs)
@@ -244,7 +244,7 @@ public class Git {
 		     switch(line.charAt(0)){
 		     case '-':
 		    	 actualInt++;
-				 if (line.length() <= 1) break;
+				//  if (line.length() <= 1) break;
 				 listMinus.add(actualInt);
 		    	 break;
 		     case '+':
@@ -312,14 +312,15 @@ public class Git {
 	   * @return
 	   */
 	  public String getBlameAt(String commitSha, String file, int lineNumber) {
-		if (this.blame == null 
-			|| !this.lastAnalysedCommit.equals(commitSha) 
-			|| !this.lastAnalysedFile.equals(file)) {
+		// if (this.blame == null 
+		// 	|| !this.lastAnalysedCommit.equals(commitSha) 
+		// 	|| !this.lastAnalysedFile.equals(file)) {
+		if (this.blame == null) {
 			resetBlameResult(commitSha, file);
 		}
 		try {
 			if (this.blame == null) return null;
-			RevCommit resultCommit = this.blame.getSourceCommit(lineNumber - 1);
+			RevCommit resultCommit = this.blame.getSourceCommit(lineNumber);
 			return resultCommit.getName();
 		} catch (Exception e) {
 			return null;

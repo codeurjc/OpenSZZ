@@ -188,27 +188,25 @@ public class Link {
 	 * @param refactoringMiner
 	 */
 	public void calculateSuspects(Git git, RefactoringMiner refactoringMiner) throws Exception {
-		suspects.addAll(LinkUtils.getSuspectsByAddressedIssues(this.issue.getBrokenBy(), this.projectName + this.issue.getId(), git,"brokenBy"));
-		if (this.suspects.size() > 0) return;
+		// suspects.addAll(LinkUtils.getSuspectsByAddressedIssues(this.issue.getBrokenBy(), this.projectName + this.issue.getId(), git,"brokenBy"));
+		// if (this.suspects.size() > 0) return;
 
-		suspects.addAll(LinkUtils.getSuspectsByIssueDescriptionAndComments(git, this.transaction.getId(), this.projectName, this.issue));
-		if (this.suspects.size() > 0) return;
+		// suspects.addAll(LinkUtils.getSuspectsByIssueDescriptionAndComments(git, this.transaction.getId(), this.projectName, this.issue));
+		// if (this.suspects.size() > 0) return;
 
-		ArrayList<CodeRange> refactoringCodeRanges = new ArrayList<>();
-		if (transaction.getFiles().stream().anyMatch(file -> LinkUtils.isJavaFile(file))) {
-			refactoringCodeRanges = refactoringMiner.getRefactoringCodeRangesForTransaction(transaction);
-		}
+		// ArrayList<CodeRange> refactoringCodeRanges = new ArrayList<>();
+		// if (transaction.getFiles().stream().anyMatch(file -> LinkUtils.isJavaFile(file))) {
+		// 	refactoringCodeRanges = refactoringMiner.getRefactoringCodeRangesForTransaction(transaction);
+		// }
 		for (FileInfo fi : transaction.getFiles()) {
-			if (LinkUtils.isCodeFile(fi)) {
+			if (fi.filename.endsWith(".java")) {
 //				List<Integer> linesMinus = LinkUtils.isJavaFile(fi)
 //						? LinkUtils.getLinesMinusForJavaFile(git, transaction.getId(), fi.filename, refactoringCodeRanges)
 //						: LinkUtils.getLinesMinus(git, transaction.getId(), fi.filename);
-				List<Integer> linesMinus = LinkUtils.isJavaFile(fi)
-						? LinkUtils.getLinesMinusJava(git, transaction.getId(), fi.filename, refactoringCodeRanges)
-						: LinkUtils.getLinesMinus(git, transaction.getId(), fi.filename);
+				List<Integer> linesMinus = LinkUtils.getLinesMinus(git, transaction.getId(), fi.filename);
 				if (linesMinus == null || linesMinus.isEmpty()) {
 					this.suspects.add(new Suspect(null, null, fi.filename, "No changed lines, only additions"));
-					continue;
+					return;
 				}
 				String previousCommit = git.getPreviousCommit(transaction.getId());
 				Suspect suspect = null;
@@ -242,7 +240,7 @@ public class Link {
     		try{ 
     			String sha = git.getBlameAt(previous,fileName,i);
     			if (sha == null)
-    				continue;
+    				break;
     			RevCommit commit = git.getCommit(sha);
     			long difference =(issue.getOpen()/1000) - (commit.getCommitTime()); 
     			if (difference > 0){ 
