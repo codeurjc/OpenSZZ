@@ -4,6 +4,9 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.lang.ProcessBuilder.Redirect;
 import java.net.URL;
@@ -90,13 +93,8 @@ public class Git {
 		execute(this.pullCommand, this.workingDirectory);
 	}
 
-	public void saveLog() throws Exception {
-		executeToFile(this.logCommand, this.workingDirectory, this.logFile);
-	}
-
 	private void execute(String command, File directory)
 			throws Exception {
-		System.out.println("$ " + command);
 		ProcessBuilder pb = new ProcessBuilder(command.split(" "));
 		pb.directory(directory);
 		pb.redirectErrorStream(true);
@@ -107,16 +105,110 @@ public class Git {
 
 	private void executeToFile(
 			String command, File workingDirectory, File destinationFile)
-			throws Exception {
+					throws Exception  {
 		System.out.println("$ " + command + " > " + destinationFile);
 		ProcessBuilder pb = new ProcessBuilder(command.split(" "));
 		pb.directory(workingDirectory);
 		pb.redirectOutput(destinationFile);
 		Process p = pb.start();
-		p.waitFor();
+        p.waitFor();
 	}
 
-	public List<Transaction> getCommits() {
+	private Transaction executeGitLog(String hash){
+
+		System.out.println("1");
+
+		String command = this.logCommand + " -p -1 " + hash;
+		ProcessBuilder pb = new ProcessBuilder(command.split(" "));
+		pb.directory(workingDirectory);
+		Process p = null;
+		try {
+			p = pb.start();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+		System.out.println("2");
+
+		BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+		String line = "";
+		String line1 = "";
+		String hashId = "";
+		Transaction transaction = null;
+		System.out.println("3");
+		try {
+			while ((line = br.readLine()) != null){
+				if (!line.isEmpty() && line.startsWith("\'")) {
+					line = line.replaceAll("\'", "");
+					String[] array = line.split(";");
+					hashId = array[0];
+					String timestamp = array[1];
+					String author = array[2];
+					String comment = array[3];
+					List<FileInfo> filesAffected = new ArrayList<FileInfo>();
+					line1 = br.readLine();
+					if (line1 != null) {
+						while (!(line1).equals("")) {
+							int BUFFER_SIZE = 100000;
+							br.mark(BUFFER_SIZE);
+							if (!line1.startsWith("\'")) {
+								String[] subarray = line1.split("	");
+								String status = subarray[0];
+								String file = subarray[1];
+								FileInfo fileInfo = new FileInfo(status, file);
+								filesAffected.add(fileInfo);
+							} else {
+								br.reset();
+								break;
+							}
+							line1 = br.readLine();
+
+						}
+					}
+					transaction = new Transaction(
+							hashId,
+							timestamp,
+							author,
+							comment,
+							filesAffected);
+				}
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("4");
+		try {
+			p.waitFor();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("5");
+
+		return transaction;
+	}
+
+	public Transaction getCommitByHash(String hash) throws Exception {
+
+		// Transaction t1 = executeGitLog(hash);
+
+		// System.out.println(t1);
+
+		// DELETE
+		executeToFile(this.logCommand, this.workingDirectory, this.logFile);
+
+		List<Transaction> transactions = this.getCommits();
+		for (Transaction t : transactions) {
+			if (t.getId().equals(hash)) {
+				return t;
+			}
+		}
+		return null;
+	}
+
+	private List<Transaction> getCommits() {
 		List<Transaction> transactions = new ArrayList<Transaction>();
 
 		String line = "";

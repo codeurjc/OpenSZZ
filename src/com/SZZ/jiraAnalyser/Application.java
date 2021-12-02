@@ -1,12 +1,9 @@
 package com.SZZ.jiraAnalyser;
 
-import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.SZZ.jiraAnalyser.entities.Link;
 import com.SZZ.jiraAnalyser.entities.Suspect;
@@ -35,33 +32,18 @@ public class Application {
 		}
 	}
 
-	public boolean calculateBugIntroductionCommits(String projectName, String bugFixingCommit, long creationDateMillis) throws MalformedURLException {
+	public boolean calculateBugIntroductionCommits(String bugFixingCommit, long creationDateMillis) throws MalformedURLException {
 
 		try {
 
-			// GET BUGFIXING COMMIT
-			System.out.println("Getting bug fixing commit " + projectName);
-			List<Transaction> transactions = this.git.getCommits();
+			Transaction bfc = this.git.getCommitByHash(bugFixingCommit);
 
-			Transaction bfc = null;
-			for(Transaction t: transactions){
-				if (t.getId().equals(bugFixingCommit)){
-					bfc = t;
-					break;
-				}
+			Link link = new Link(bfc, creationDateMillis);
+
+			link.calculateSuspects(this.git, null);
+			for (Suspect s : link.getSuspects()) {
+				System.out.println(link.transaction.getId() + "," + s.getCommitId());
 			}
-
-			transactions.clear();
-			bfc.hasBugId();
-			transactions.add(bfc);
-
-			// GET LINKS
-			System.out.println("Calculating bug fixing commits for project " + projectName);
-			List<Link> links = new ArrayList<Link>(); 
-			links.add(new Link(bfc, creationDateMillis));
-			// CALCULATE BIC
-			System.out.println("Calculating Bug inducing commits for project " + projectName);
-			calculateBugInducingCommits(links, projectName);
 
 		} catch (Exception e) {
 			return false;
@@ -70,23 +52,4 @@ public class Application {
 		return true;
 	}
 
-	private void calculateBugInducingCommits(List<Link> links, String projectName) {
-		PrintWriter printWriter;
-		try {
-			printWriter = new PrintWriter(projectName + "_BugInducingCommits.csv");
-			printWriter.println("BugFixingCommit,BugInducingCommit");
-			for (Link l : links) {
-				l.calculateSuspects(this.git, null);
-				for (Suspect s : l.getSuspects()) {
-					printWriter.println(l.transaction.getId() + "," + s.getCommitId());
-				}
-			}
-			printWriter.close();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			System.out.println((e.getStackTrace()));
-		}
-
-	}
 }
