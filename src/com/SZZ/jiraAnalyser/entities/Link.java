@@ -1,20 +1,12 @@
 package  com.SZZ.jiraAnalyser.entities;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import com.SZZ.jiraAnalyser.entities.Issue.Resolution;
 import com.SZZ.jiraAnalyser.entities.Transaction.FileInfo;
 import com.SZZ.jiraAnalyser.git.Git;
 
@@ -23,18 +15,10 @@ import org.eclipse.jgit.revwalk.RevCommit;
 
 public class Link {
 
-	public final long number;
 	public final Transaction transaction;
-	public Issue issue = null;
-	private String projectName = "";
-
-	private int syntacticConfidence = 0;
-
-	private int semanticConfidence = 0;
-
-	private List<Suspect> suspects = new LinkedList<Suspect>();
+	private long creationDateMillis;
 	
-
+	private List<Suspect> suspects = new LinkedList<Suspect>();
 
 	/**
 	 * Object Representation of a Link Transaction, commit found from the log
@@ -42,55 +26,14 @@ public class Link {
 	 * with the bug
 	 * 
 	 * @param t
-	 * @param b
-	 * @param number
 	 */
-	public Link(Transaction t, String projectName) {
+	public Link(Transaction t, long creationDateMillis) {
 		this.transaction = t;
-		this.number = t.getBugIds().get(0);
-		this.projectName = projectName;
-		this.setBug();
-		this.setSyntacticConfidence();
-		this.setSemanticConfidence();
+		this.creationDateMillis = creationDateMillis;
 	}
 
 	public List<Suspect> getSuspects() {
 		return suspects;
-	}
-
-	/**
-	 * It sets the syntacticConfidence a number between 0 - 2. 1. The number is
-	 * a bug number 2. The log message contains a keyword,or the log message
-	 * contains only plain or bug numbers
-	 */
-	private void setSyntacticConfidence() {
-		if (isBugInJira())
-			this.syntacticConfidence++;
-		if (containsKeywords())
-			this.syntacticConfidence++;
-	}
-
-	/**
-	 * It sets the semanticConfidence
-	 */
-	private void setSemanticConfidence() {
-		if (this.issue != null) {
-			// The bug b has been resolved as FIXED at least once.
-			if (this.issue.getResolution().equals(Resolution.FIXED))
-				this.semanticConfidence++;
-			// The author of the transaction t has been assigned to the bug b
-			if (this.issue.getAssigned().equals(transaction.getAuthor()))
-				this.semanticConfidence++;
-			// One or more of the files affected by the transaction t have been
-			// attached to the bug b.
-			if (this.checkAttachments())
-				this.semanticConfidence++;
-			// The short description of the bug report b is contained in the log
-			// message of the transaction t
-			String e = longestCommonSubstrings(transaction.getComment().toLowerCase(), issue.getTitle().toLowerCase());
-			if (e.length() > 20)
-				this.semanticConfidence++;
-		}
 	}
 
 	public static String longestCommonSubstrings(String s, String t) {
@@ -115,132 +58,6 @@ public class Link {
 			}
 		}
 		return result.toString();
-	}
-
-	/**
-	 * It checks whether one or more of the files affected by the transaction t
-	 * have been attached to the bug b
-	 * 
-	 * @return
-	 */
-	private boolean checkAttachments() {
-		List<FileInfo> tFiles = transaction.getFiles();
-		List<String> bugFiles = issue.getAttachments();
-
-		for (FileInfo f : tFiles) {
-			File p = new File(f.filename);
-			String name = p.getName();
-			for (String bugFile : bugFiles) {
-				if (bugFile.equals(name))
-					return true;
-			}
-
-		}
-		return false;
-	}
-
-	/**
-	 * It checks whether a bug has been fixed at least once
-	 * 
-	 * @return
-	 */
-	/*
-	 * private boolean checkResolution(){ try (BufferedReader br = new
-	 * BufferedReader(new FileReader(("stati.txt")))) { String sCurrentLine;
-	 * while ((sCurrentLine = br.readLine()) != null) { if
-	 * (sCurrentLine.startsWith(number+"")){ if (sCurrentLine.contains("FIXED"))
-	 * return true; else return false; } } } catch (IOException e) {
-	 * e.printStackTrace();
-	 * 
-	 * }
-	 * 
-	 * return false; }
-	 */
-
-	/**
-	 * It checks whether the number is really a bug.
-	 * 
-	 * @return true false
-	 */
-	private boolean isBugInJira() {
-		boolean result = false;
-		if (issue == null)
-			return false;
-		else
-			result = true;
-		return result;
-	}
-
-	/**
-	 * It gets from Jira Log File
-	 * 
-	 * @return true false
-	 */
-	private void setBug() {
-		int page = (int)Math.floor(number / 1000);
-		while(!new File(projectName+"_"+page+".csv").exists()){
-			page--;
-		}
-		try (BufferedReader br = new BufferedReader(new FileReader((projectName+"_"+page+".csv")))) {
-			String sCurrentLine;
-			while ((sCurrentLine = br.readLine()) != null) {
-				sCurrentLine = sCurrentLine.replaceAll("\"", "");
-				if (sCurrentLine.startsWith(projectName + "-" + number)) {
-					String[] s = sCurrentLine.split(";");
-					List<String> comments = new LinkedList<String>();
-					List<String> attachments = Arrays.asList(s[7].replace("[", "").replace("]", ""));
-					int i = 8;
-					while (i < s.length) {
-						comments.add(s[i]);
-						i++;
-					}
-					Issue.Status status = Issue.Status.UNCONFIRMED;
-					Resolution resolution = Resolution.NONE;
-					
-					try{
-						Issue.Status.valueOf(s[3].toUpperCase());
-					}
-					catch(Exception e){
-						status = Issue.Status.UNCONFIRMED;
-					}
-					
-					try{
-						Resolution.valueOf(s[2].toUpperCase().replace(" ", "").replace("'", ""));
-					}
-					catch(Exception e){
-						 resolution = Resolution.NONE;
-					}
-					
-					issue = new Issue(number, s[1], status,resolution, s[4],
-							Long.parseLong(s[5]), Long.parseLong(s[6]),attachments, comments,s[7]);
-					break;
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private boolean containsKeywords() {
-		String comment = transaction.getComment().toLowerCase();
-		Pattern patter1 = Pattern.compile("fix(e[ds])?|bugs?|defects?|patch", Pattern.CASE_INSENSITIVE);
-		Pattern patter2 = Pattern.compile("^[0-9]*$", Pattern.CASE_INSENSITIVE);
-		Matcher p1 = patter1.matcher(comment.toLowerCase());
-		Matcher p2 = patter2.matcher(comment);
-		boolean b1 = p1.find();
-		boolean b2 = p2.find();
-		if (b1 || b2)
-			return true;
-		else
-			return false;
-	}
-
-	public int getSyntacticConfidence() {
-		return this.syntacticConfidence;
-	}
-
-	public int getSemanticConfidence() {
-		return this.semanticConfidence;
 	}
 
 	/**
@@ -287,7 +104,7 @@ public class Link {
     			if (sha == null)
     				break;
     			RevCommit commit = git.getCommit(sha,l); 
-    			long difference =(issue.getOpen()/1000) - (commit.getCommitTime()); 
+    			long difference =(creationDateMillis/1000) - (commit.getCommitTime()); 
     			if (difference > 0){ 
     				if (difference < tempDifference ){
     					closestCommit = commit; 

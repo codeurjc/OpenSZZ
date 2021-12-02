@@ -35,7 +35,7 @@ public class Application {
 		}
 	}
 
-	public boolean mineData(String projectName, String bugFixingCommit) throws MalformedURLException {
+	public boolean calculateBugIntroductionCommits(String projectName, String bugFixingCommit, long creationDateMillis) throws MalformedURLException {
 
 		try {
 
@@ -58,8 +58,7 @@ public class Application {
 			// GET LINKS
 			System.out.println("Calculating bug fixing commits for project " + projectName);
 			List<Link> links = new ArrayList<Link>(); 
-			links.add(new Link(bfc, projectName));
-			System.out.println(links);
+			links.add(new Link(bfc, creationDateMillis));
 			// CALCULATE BIC
 			System.out.println("Calculating Bug inducing commits for project " + projectName);
 			calculateBugInducingCommits(links, projectName);

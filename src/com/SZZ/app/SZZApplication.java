@@ -8,17 +8,15 @@ import com.SZZ.jiraAnalyser.Application;
 public class SZZApplication {
 
 	public static void main(String[] args) {
-		args = new String[4];
+
+		// EXAMPLE
+
+		args = new String[5];
 		args[0] = "-all";
 		args[1] = "https://github.com/apache/commons-bcel.git";
 		args[2] = "BCEL";
 		args[3] = "f959849a37c8b08871cec6d6276ab152e6ed08ce";
-		
-//		args[0] = "-all";
-//		args[1] = "https://github.com/apache/archiva.git";
-//		args[2] = "https://issues.apache.org/jira/projects/MRM";
-//		args[3] = "MRM";
-//		https://issues.apache.org/jira/projects/MRM
+		args[4] = "1591052424000";
 				
 		if (args.length == 0) {
 			System.out.println("Welcome to the SZZ Calculation script.");
@@ -30,7 +28,9 @@ public class SZZApplication {
 				try {
 					Application a = new Application();
 					a.setUpRepository(args[1]);
-					a.mineData(args[2], args[3]);
+					
+
+					a.calculateBugIntroductionCommits(args[2], args[3],Long.parseLong(args[4]));
 				} catch (MalformedURLException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
