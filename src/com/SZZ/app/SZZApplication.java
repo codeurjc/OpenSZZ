@@ -12,6 +12,7 @@ public class SZZApplication {
 		args[0] = "-all";
 		args[1] = "https://github.com/apache/commons-bcel.git";
 		args[2] = "BCEL";
+		args[3] = "f959849a37c8b08871cec6d6276ab152e6ed08ce";
 		
 //		args[0] = "-all";
 //		args[1] = "https://github.com/apache/archiva.git";
@@ -28,7 +29,8 @@ public class SZZApplication {
 			case "-all":
 				try {
 					Application a = new Application();
-					a.mineData(args[1], args[2]);
+					a.setUpRepository(args[1]);
+					a.mineData(args[2], args[3]);
 				} catch (MalformedURLException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

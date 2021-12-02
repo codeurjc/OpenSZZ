@@ -3,55 +3,63 @@ package com.SZZ.jiraAnalyser;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.LinkedList;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.SZZ.jiraAnalyser.entities.Link;
-import com.SZZ.jiraAnalyser.entities.LinkManager;
 import com.SZZ.jiraAnalyser.entities.Suspect;
 import com.SZZ.jiraAnalyser.entities.Transaction;
-import com.SZZ.jiraAnalyser.entities.TransactionManager;
+import com.SZZ.jiraAnalyser.git.Git;
 
 public class Application {
 
 	public URL sourceCodeRepository;
 
-	private final TransactionManager transactionManager = new TransactionManager();
-	private final LinkManager linkManager = new LinkManager();
+	private Git git = null;
 	public boolean hasFinished = false;
 
 	public Application() {
+
 	}
 
-	public boolean mineData(String git, String projectName) throws MalformedURLException {
+	public void setUpRepository(String url){
+		Path fileStoragePath = Paths.get(System.getProperty("user.dir"));
+		try {
+			this.git = new Git(fileStoragePath, new URL(url));
+			this.git.cloneRepository();
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
 
-		this.sourceCodeRepository = new URL(git);
+	public boolean mineData(String projectName, String bugFixingCommit) throws MalformedURLException {
 
 		try {
 
 			// GET BUGFIXING COMMIT
-			System.out.println("Downloading Git logs for project " + projectName);
-			List<Transaction> transactions = transactionManager.getBugFixingCommits(sourceCodeRepository, projectName);
+			System.out.println("Getting bug fixing commit " + projectName);
+			List<Transaction> transactions = this.git.getCommits();
 
 			Transaction bfc = null;
 			for(Transaction t: transactions){
-				if (t.getId().equals("f959849a37c8b08871cec6d6276ab152e6ed08ce")){
+				if (t.getId().equals(bugFixingCommit)){
 					bfc = t;
 					break;
 				}
 			}
 
 			transactions.clear();
+			bfc.hasBugId();
 			transactions.add(bfc);
-
-			System.out.println(bfc);
 
 			// GET LINKS
 			System.out.println("Calculating bug fixing commits for project " + projectName);
-			List<Link> links = linkManager.getLinks(transactions, projectName, null);
-			discartLinks(links);
-
+			List<Link> links = new ArrayList<Link>(); 
+			links.add(new Link(bfc, projectName));
+			System.out.println(links);
 			// CALCULATE BIC
 			System.out.println("Calculating Bug inducing commits for project " + projectName);
 			calculateBugInducingCommits(links, projectName);
@@ -63,45 +71,16 @@ public class Application {
 		return true;
 	}
 
-	/*
-	 * Only Links with sem > 1 OR ( sem = 1 AND syn > 0) must be considered
-	 */
-	private void discartLinks(List<Link> links) {
-		List<Link> linksToDelete = new LinkedList<Link>();
-		for (Link l : links) {
-			if (l.getSemanticConfidence() < 1 && (l.getSemanticConfidence() != 1 || l.getSyntacticConfidence() < 0)) {
-				linksToDelete.add(l);
-			} else if (l.transaction.getTimeStamp().getTime() > l.issue.getClose()) {
-				linksToDelete.add(l);
-			}
-		}
-		links.removeAll(linksToDelete);
-	}
-
 	private void calculateBugInducingCommits(List<Link> links, String projectName) {
-		System.out.println("Calculating Bug Inducing Commits");
-		int count = links.size();
 		PrintWriter printWriter;
 		try {
 			printWriter = new PrintWriter(projectName + "_BugInducingCommits.csv");
-			printWriter.println("bugFixingId;bugFixingTs;bugFixingfileChanged;bugInducingId;bugInducingTs;issueType");
+			printWriter.println("BugFixingCommit,BugInducingCommit");
 			for (Link l : links) {
-				if (count % 100 == 0)
-					System.out.println(count + " Commits left");
-				l.calculateSuspects(transactionManager.getGit(), null);
-				String pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
-				SimpleDateFormat format1 = new SimpleDateFormat(pattern);
+				l.calculateSuspects(this.git, null);
 				for (Suspect s : l.getSuspects()) {
-					printWriter.println();
-					printWriter.println(
-							l.transaction.getId() + ";" +
-									format1.format(l.transaction.getTimeStamp()) + ";" +
-									s.getFileName() + ";" +
-									s.getCommitId() + ";" +
-									format1.format(s.getTs()) + ";" +
-									l.issue.getType());
+					printWriter.println(l.transaction.getId() + "," + s.getCommitId());
 				}
-				count--;
 			}
 			printWriter.close();
 		} catch (Exception e) {

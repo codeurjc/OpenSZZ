@@ -45,9 +45,9 @@ public class Link {
 	 * @param b
 	 * @param number
 	 */
-	public Link(Transaction t, long number, String projectName) {
+	public Link(Transaction t, String projectName) {
 		this.transaction = t;
-		this.number = number;
+		this.number = t.getBugIds().get(0);
 		this.projectName = projectName;
 		this.setBug();
 		this.setSyntacticConfidence();
