@@ -1,1 +1,7 @@
 /bin/
+.vscode/
+
+# EXAMPLES
+commons-bcel/
+BCEL_*
+commons-bcel.txt

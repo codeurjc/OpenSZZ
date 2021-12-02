@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import  com.SZZ.jiraAnalyser.git.*;
+import com.SZZ.jiraAnalyser.git.*;
 
 
 public class Storage {
@@ -38,8 +38,7 @@ public class Storage {
 	 * @return
 	 */
 	public List<Transaction> checkoutCvs(URL url, String projectName) {
-		List<Transaction> list = new ArrayList<Transaction>();
-		List<Transaction> result = new ArrayList<Transaction>();
+		List<Transaction> transactions = new ArrayList<Transaction>();
 		Matcher mGit = pGit.matcher(url.toString());
 		if(mGit.find()) {
 			this.git = new Git(fileStoragePath, url);
@@ -47,28 +46,12 @@ public class Storage {
 				this.git.cloneRepository();
 				this.git.pullUpdates();
 				this.git.saveLog();
-				list = git.getCommits();
-				for (Transaction t : list){
-					if (isBugPresumedFixing(t.getComment(),projectName))
-						result.add(t);}
+				transactions = git.getCommits();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
-		return result;
-	}
-	
-	/**
-	 * It controls whether it contains at least a Jira issue
-	 * @param comment
-	 * @param projectName
-	 * @return
-	 */
-	private boolean isBugPresumedFixing(String comment, String projectName){
-	    String pattern = projectName.toLowerCase()+"[ ]*-[ ]*[0-9]+";
-	    Pattern r = Pattern.compile(pattern);
-	    Matcher m = r.matcher(comment);
-	    return m.find();
+		return transactions;
 	}
 	
 	public Git getGit(){

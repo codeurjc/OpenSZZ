@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.ProcessBuilder.Redirect;
 import java.net.URL;
@@ -14,6 +13,9 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
+
+import com.SZZ.jiraAnalyser.entities.Transaction;
+import com.SZZ.jiraAnalyser.entities.Transaction.FileInfo;
 
 import org.eclipse.jgit.api.BlameCommand;
 import org.eclipse.jgit.blame.BlameResult;
@@ -29,9 +31,6 @@ import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.treewalk.filter.AndTreeFilter;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.eclipse.jgit.treewalk.filter.TreeFilter;
-
-import com.SZZ.jiraAnalyser.entities.*;
-import com.SZZ.jiraAnalyser.entities.Transaction.FileInfo;
 
 
 
@@ -316,8 +315,8 @@ public class Git {
 			  Repository repository = git.getRepository();
 			  RevWalk walk = new RevWalk( repository);
 			  ObjectId commitId = ObjectId.fromString( sha);
-			   commit = walk.parseCommit( commitId );
-			  //System.out.println(commit.getCommitTime());
+			  commit = walk.parseCommit( commitId );
+			  walk.close();
 			} catch (Exception e) {
 				e.printStackTrace();
 				l.println((e));
@@ -333,10 +332,7 @@ public class Git {
 	   * @return
 	   */
 	  public String getPreviousCommit (String sha, String file, PrintWriter l){
-		  if (sha.equals("a8da84c614ba6e6e87c6c91e0c426ddfec2766a2"))
-			  System.out.println();
 		  File  localRepo1 = new File(workingDirectory+"");
-		  Iterable<RevCommit> iterable;
 		  String finalSha = "";
 		  RevCommit latestCommit = null;
 		  String path = file;

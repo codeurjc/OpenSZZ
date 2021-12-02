@@ -14,12 +14,11 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.eclipse.jgit.revwalk.RevCommit;
-
- import  com.SZZ.jiraAnalyser.entities.*;
 import com.SZZ.jiraAnalyser.entities.Issue.Resolution;
 import com.SZZ.jiraAnalyser.entities.Transaction.FileInfo;
-import  com.SZZ.jiraAnalyser.git.*;
+import com.SZZ.jiraAnalyser.git.Git;
+
+import org.eclipse.jgit.revwalk.RevCommit;
 
 
 public class Link {
