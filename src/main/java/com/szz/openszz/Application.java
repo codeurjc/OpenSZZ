@@ -1,26 +1,61 @@
 package com.szz.openszz;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.List;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+
+import org.json.simple.JSONArray;
 
 public class Application {
 
-	public static void main(String[] args) throws NumberFormatException, MalformedURLException {
+	private static final String DEFAULT_LOCATION = System.getProperty("user.dir");
 
-		// EXAMPLE
+	@Parameter(names={"--bug-fixing-commit", "-bfc"}, required = true)
+    String bugFixingCommit;
 
-		args = new String[3];
-		args[0] = "https://github.com/apache/commons-bcel.git";
-		args[1] = "f959849a37c8b08871cec6d6276ab152e6ed08ce";
-		args[2] = "1591052424000";
-				
-		if (args.length != 3) {
-			System.out.println("Welcome to the SZZ Calculation script.");
-			System.out.println("Here a guide how to use the script");
-			System.out.println("szz.jar <repo_url> <bug_fixing_commit> <issue_created_millis>");
-		} else {
-			OpenSZZ a = new OpenSZZ();
-			a.setUpRepository(args[0]);
-			a.calculateBugIntroductionCommits(args[1],Long.parseLong(args[2]));
+    @Parameter(names={"--repository-url", "-r"}, required = true)
+    String url;
+
+	@Parameter(names={"--issue-creation-millis", "-i"}, required = true)
+    long creationDateMillis;
+
+	@Parameter(names={"--repository-directory", "-d"})
+    String repositoryDirectory = DEFAULT_LOCATION;
+
+	@Parameter(names={"--result-output-directory", "-o"})
+    String resultOutputDirectory = DEFAULT_LOCATION;
+
+    public static void main(String ... argv) throws Exception {
+        Application app = new Application();
+        JCommander.newBuilder()
+            .addObject(app)
+            .build()
+            .parse(argv);
+        app.run();
+    }
+
+	public void run() throws NumberFormatException, MalformedURLException {
+
+		OpenSZZ a = new OpenSZZ();
+		a.setUpRepository(url);
+		List<String> suspects = a.calculateBugIntroductionCommits(bugFixingCommit, creationDateMillis);
+		JSONArray suspectsJson = new JSONArray();
+		suspectsJson.addAll(suspects);
+
+		File directory = new File(resultOutputDirectory);
+		if(!directory.exists()) directory.mkdirs();
+
+		try (FileWriter file = new FileWriter(resultOutputDirectory+"suspects.json")) {
+			file.write(suspectsJson.toJSONString()); 
+			file.flush();
+	
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 
 	}

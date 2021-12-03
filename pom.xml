@@ -29,22 +29,56 @@
         <artifactId>org.eclipse.jgit</artifactId>
         <version>4.9.0.201710071750-r</version>
     </dependency>
+    <dependency>
+        <groupId>com.googlecode.json-simple</groupId>
+        <artifactId>json-simple</artifactId>
+        <version>1.1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.beust</groupId>
+      <artifactId>jcommander</artifactId>
+      <version>1.81</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
-      <!-- Make this jar executable -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-				  <archive>
-            <manifest>
-              <!-- Jar file entry point -->
-              <mainClass>com.szz.openszz.Application</mainClass>
-            </manifest>
-				  </archive>
-				</configuration>
+      <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <executions>
+              <execution>
+                  <phase>package</phase>
+                  <goals>
+                      <goal>single</goal>
+                  </goals>
+                  <configuration>
+                      <archive>
+                      <manifest>
+                          <mainClass>
+                              com.szz.openszz.Application
+                          </mainClass>
+                      </manifest>
+                      </archive>
+                      <descriptorRefs>
+                          <descriptorRef>jar-with-dependencies</descriptorRef>
+                      </descriptorRefs>
+                  </configuration>
+              </execution>
+          </executions>
+      </plugin>
+
+      <plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.19.1</version>
+				<dependencies>
+					<dependency>
+						<groupId>org.junit.platform</groupId>
+						<artifactId>junit-platform-surefire-provider</artifactId>
+						<version>1.0.2</version>
+					</dependency>
+				</dependencies>
 			</plugin>
+
     </plugins>
   </build>
 
