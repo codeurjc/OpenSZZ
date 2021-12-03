@@ -4,9 +4,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import com.szz.openszz.entities.Link;
-import com.szz.openszz.entities.Suspect;
 import com.szz.openszz.entities.Transaction;
 import com.szz.openszz.git.Git;
 
@@ -32,24 +33,19 @@ public class OpenSZZ {
 		}
 	}
 
-	public boolean calculateBugIntroductionCommits(String bugFixingCommit, long creationDateMillis) throws MalformedURLException {
+	public List<String> calculateBugIntroductionCommits(String bugFixingCommit, long creationDateMillis) throws MalformedURLException {
 
-		try {
+		Transaction bfc = this.git.getCommitByHash(bugFixingCommit);
 
-			Transaction bfc = this.git.getCommitByHash(bugFixingCommit);
+		Link link = new Link(bfc, creationDateMillis);
 
-			Link link = new Link(bfc, creationDateMillis);
+		link.calculateSuspects(this.git, null);
 
-			link.calculateSuspects(this.git, null);
-			for (Suspect s : link.getSuspects()) {
-				System.out.println(link.transaction.getId() + "," + s.getCommitId());
-			}
-
-		} catch (Exception e) {
-			return false;
-		}
-
-		return true;
+		List<String> suspects = link.getSuspects().stream()
+										.map((s)-> s.getCommitId())
+										.distinct()
+										.collect(Collectors.toList());
+		return suspects;
 	}
 
 }
