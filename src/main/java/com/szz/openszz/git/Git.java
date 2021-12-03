@@ -7,9 +7,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.lang.ProcessBuilder.Redirect;
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,22 +32,14 @@ import org.eclipse.jgit.treewalk.filter.TreeFilter;
 
 public class Git {
 
-	public final String cloneCommand;
-	public final File storagePath;
-	public final String pullCommand;
-	public final File workingDirectory;
+	public final String workingDirectory;
 	public final String logCommand;
-	public final File logFile;
-	public final File csvFile;
 	private BlameResult blame;
 
 	private static final char DELIMITER = ';';
 
-	public Git(Path storagePath, URL url) {
-		this.cloneCommand = "git clone " + url.toString();
-		this.storagePath = storagePath.toFile();
-		this.pullCommand = "git pull";
-		this.workingDirectory = gitWorkingDirectory(storagePath, url);
+	public Git(String repositoryDirectory) {;
+		this.workingDirectory = repositoryDirectory;
 		this.logCommand = "git log " +
 				"--pretty=format:\'" +
 				"%H" + DELIMITER +
@@ -59,53 +48,27 @@ public class Git {
 				"%s" + DELIMITER +
 				"\' " +
 				"--name-status -M100%";
-		this.logFile = this.gitLogFile(storagePath, url);
-		this.csvFile = this.csvFile(storagePath, url);
-		workingDirectory.delete();
 	}
 
-	private String gitDirectory(URL url) {
-		final String link = url.toString();
-		return link.substring(link.lastIndexOf('/') + 1, link.lastIndexOf('.'));
-	}
-
-	private File gitWorkingDirectory(Path storagePath, URL url) {
-		return Paths.get(storagePath.toString(), this.gitDirectory(url)).toFile();
-	}
-
-	private File gitLogFile(Path storagePath, URL url) {
-		return Paths.get(storagePath.toString(), this.gitDirectory(url) + ".txt")
-				.toFile();
-	}
-
-	private File csvFile(Path storagePath, URL url) {
-		return Paths.get(storagePath.toString(), this.gitDirectory(url) + ".csv")
-				.toFile();
-	}
-
-	public void cloneRepository() throws Exception {
-		execute(this.cloneCommand, this.storagePath);
-	}
-
-	public void pullUpdates() throws Exception {
-		execute(this.pullCommand, this.workingDirectory);
-	}
-
-	private void execute(String command, File directory)
-			throws Exception {
-		ProcessBuilder pb = new ProcessBuilder(command.split(" "));
-		pb.directory(directory);
+	public void cloneRepository(String url) throws Exception {
+		String cloneCommand = "git clone " + url + " " + this.workingDirectory;
+		ProcessBuilder pb = new ProcessBuilder(cloneCommand.split(" "));
 		pb.redirectErrorStream(true);
+		pb.directory(new File(System.getProperty("user.dir")));
 		pb.redirectOutput(Redirect.INHERIT);
 		Process p = pb.start();
 		p.waitFor();
+	}
+
+	public boolean repositoryExist(){
+		return new File(this.workingDirectory).exists();
 	}
 
 	public Transaction getCommitByHash(String hash){
 
 		String command = this.logCommand + " -p -1 " + hash;
 		ProcessBuilder pb = new ProcessBuilder(command.split(" "));
-		pb.directory(workingDirectory);
+		pb.directory(new File(workingDirectory));
 		Process p = null;
 		try {
 			p = pb.start();
@@ -180,7 +143,7 @@ public class Git {
 	 */
 	public String getDiff(String shaCommit, String fileName, PrintWriter l) {
 		String result = "";
-		File localRepo1 = new File(workingDirectory + "");
+		File localRepo1 = new File(this.workingDirectory + "");
 		try {
 			org.eclipse.jgit.api.Git git = org.eclipse.jgit.api.Git.open(localRepo1);
 			ObjectId oldId = git.getRepository().resolve(shaCommit + "^^{tree}");
@@ -283,7 +246,7 @@ public class Git {
 	 */
 	// removed unused parameter PrintWriter l
 	public String getBlameAt(String commitSha, String file, int lineNumber) {
-		File localRepo1 = new File(workingDirectory + "");
+		File localRepo1 = new File(this.workingDirectory);
 		try {
 			if (blame == null) {
 				org.eclipse.jgit.api.Git git = org.eclipse.jgit.api.Git.open(localRepo1);
@@ -307,7 +270,7 @@ public class Git {
 	 *
 	 */
 	public RevCommit getCommit(String sha, PrintWriter l) {
-		File localRepo1 = new File(workingDirectory + "");
+		File localRepo1 = new File(this.workingDirectory);
 		// Repository repository = git.getRepository();
 		RevCommit commit = null;
 		try {
@@ -333,7 +296,7 @@ public class Git {
 	 * @return
 	 */
 	public String getPreviousCommit(String sha, String file, PrintWriter l) {
-		File localRepo1 = new File(workingDirectory + "");
+		File localRepo1 = new File(this.workingDirectory);
 		String finalSha = "";
 		RevCommit latestCommit = null;
 		String path = file;

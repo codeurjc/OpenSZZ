@@ -1,30 +1,77 @@
-# OpenSZZ
-OpenSZZ  is  our open source implementation of the SZZ Algorithm [1] to calculate the <i>BugInducingCommits</i> of any project using Git as versioning system and Jira as issue tracker. 
-A cloud-native version is available on the [OpenSZZ-Cloud-Native repository](https://github.com/clowee/OpenSZZ-cloud-native)
+# OpenSZZ-Simple
 
-A dataset including the analysis of 33 projects, has been published in 2019 [2]. 
+This repository contains a modified version of the [OpenSZZ](https://github.com/clowee/OpenSZZ) algorithm.
 
-The current version can tag commits in github with the faults reported in Jira. 
+Compared to the original project, the functionality of the algorithm has not been modified, but the way in which it is executed has.
 
-## How to cite
+The main change is that Jira's issue mining has been removed. Now it is the user who provides the following information to the algorithm:
 
-Valentina Lenarduzzi, Fabio Palomba, Davide Taibi, and Damian Andrew Tamburri. 2020. OpenSZZ: A Free, Open-Source, Web-Accessible Implementation of the SZZ Algorithm. In Proceedings of the 28th International Conference on Program Comprehension (ICPC '20). DOI:https://doi.org/10.1145/3387904.3389295
+- The hash commit in which the bug fix was introduced
+- The date (in milliseconds) when the issue was created where the bug was reported
+- The project's git repository (local path or repository url)
+
+The executable prints the list of suspected commits in a JSON file (suspects.json) for integration with other tools.
+
+Pre-requisites:
+- Java 8+
+
+## Build project
+
+Pre-requisites:
+- Java 8+
+- Maven 3+
+
+In order to generate de executable (jar file) just run:
+
+```
+     mvn clean package -DskipTests
+```
+
+## Usage
+
+### With Git URL
+
+```
+     java -jar openszz.jar -bfc <bug_fix_hash> -r <repository_url> -i <issue_creation_timestamp>
+```
+
+Example:
+```
+     java -jar openszz.jar -bfc f959849a37c8b08871cec6d6276ab152e6ed08ce -r https://github.com/apache/commons-bcel.git -i 1591052424000
+```
+
+You can also specify the folder where the repository will be cloned (-d):
+
+```
+    java -jar openszz.jar -bfc <bug_fix_hash> -r <repository_url> -d <path_to_repo> -i <issue_creation_timestamp>
+```
+
+### With local repo
+
+```
+     java -jar openszz.jar -bfc <bug_fix_hash> -d <path_to_repo> -i <issue_creation_timestamp>
+```
+
+Example:
+```
+     java -jar openszz.jar -bfc f959849a37c8b08871cec6d6276ab152e6ed08ce -d path/to/repo/ -i 1591052424000
+```
+
+### All options
+
+```
+  * --bug-fixing-commit, -bfc
+      Hash of bug fixing commit
+  * --issue-creation-millis, -i
+      Timestamp of issue creation (in milliseconds)
+    --repository-directory, -d
+      Path to directory where the repository is available or where the repository will be cloned
+      Default: <current_work_directory>/tmp/
+    --repository-url, -r
+      Git URL of the project repository
+    --result-output-directory, -o
+      Path to directory where the result file 'suspects.json' will be stored
+      Default: <current_work_directory>/suspects.json
+```
 
 
-## Download
-Release 0.1
-
-## Usage: 
-
-     * szz.jar -all githubUrl jiraUrl jiraKey
-     * e.g.:  java -jar openszz.jar -all https://github.com/apache/batik https://issues.apache.org/jira/projects/BATIK batik
- 
-The script first clones the gitHub repository, then download the Jira faults, and finally maps faults to commits. 
-
- 
-
-# References
-
-[1] Jacek Śliwerski, Thomas Zimmermann, and Andreas Zeller. 2005. When do changes induce fixes?. In Proceedings of the 2005 international workshop on Mining software repositories (MSR '05). ACM, New York, NY, USA, 1-5. DOI=http://dx.doi.org/10.1145/1082983.1083147
-
-[2] V. Lenarduzzi, N. Saarimäki, and D. Taibi,“The Technical Debt Dataset”, in The Fifteenth International Conference on Predictive Models and Data Analytics in Software Engineering (PROMISE’19), Brazil, 2019.

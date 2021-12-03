@@ -1,9 +1,6 @@
 package com.szz.openszz;
 
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -13,23 +10,20 @@ import com.szz.openszz.git.Git;
 
 public class OpenSZZ {
 
-	public URL sourceCodeRepository;
+	public static final String DEFAULT_REPOSITORY_LOCATION = System.getProperty("user.dir")+"/tmp/";
 
 	private Git git = null;
-	public boolean hasFinished = false;
 
-	public OpenSZZ() {
-
+	public void setUpRepository(String url) throws Exception{
+		this.setUpRepository(url, DEFAULT_REPOSITORY_LOCATION);
 	}
 
-	public void setUpRepository(String url){
-		Path fileStoragePath = Paths.get(System.getProperty("user.dir"));
-		try {
-			this.git = new Git(fileStoragePath, new URL(url));
-			this.git.cloneRepository();
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(1);
+	public void setUpRepository(String url, String repositoryDirectory) throws Exception{
+		this.git = new Git(repositoryDirectory);
+		if(!this.git.repositoryExist()){
+			System.out.println("Repository not found at "+repositoryDirectory);
+			System.out.println("Cloning repository from "+url);
+			this.git.cloneRepository(url); 
 		}
 	}
 
@@ -41,11 +35,10 @@ public class OpenSZZ {
 
 		link.calculateSuspects(this.git, null);
 
-		List<String> suspects = link.getSuspects().stream()
-										.map((s)-> s.getCommitId())
-										.distinct()
-										.collect(Collectors.toList());
-		return suspects;
+		return link.getSuspects().stream()
+			.map((s)-> s.getCommitId())
+			.distinct()
+			.collect(Collectors.toList());
 	}
 
 }

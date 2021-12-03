@@ -2,7 +2,6 @@ package com.szz.openszz;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -11,7 +10,7 @@ import org.junit.jupiter.api.Test;
 class SZZTest {
 
     @Test
-    void testSZZ() throws NumberFormatException, MalformedURLException {
+    void testSZZ() throws Exception {
 
         String repository = "https://github.com/apache/commons-bcel.git";
 		String bugFixingCommit = "f959849a37c8b08871cec6d6276ab152e6ed08ce";
