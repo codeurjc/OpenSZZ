@@ -1,11 +1,9 @@
-package com.SZZ.jiraAnalyser.git;
+package com.szz.openszz.git;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.lang.ProcessBuilder.Redirect;
@@ -17,8 +15,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
 
-import com.SZZ.jiraAnalyser.entities.Transaction;
-import com.SZZ.jiraAnalyser.entities.Transaction.FileInfo;
+import com.szz.openszz.entities.Transaction;
+import com.szz.openszz.entities.Transaction.FileInfo;
 
 import org.eclipse.jgit.api.BlameCommand;
 import org.eclipse.jgit.blame.BlameResult;
@@ -101,17 +99,6 @@ public class Git {
 		pb.redirectOutput(Redirect.INHERIT);
 		Process p = pb.start();
 		p.waitFor();
-	}
-
-	private void executeToFile(
-			String command, File workingDirectory, File destinationFile)
-					throws Exception  {
-		System.out.println("$ " + command + " > " + destinationFile);
-		ProcessBuilder pb = new ProcessBuilder(command.split(" "));
-		pb.directory(workingDirectory);
-		pb.redirectOutput(destinationFile);
-		Process p = pb.start();
-        p.waitFor();
 	}
 
 	public Transaction getCommitByHash(String hash){

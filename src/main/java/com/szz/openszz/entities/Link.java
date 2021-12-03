@@ -1,4 +1,4 @@
-package  com.SZZ.jiraAnalyser.entities;
+package  com.szz.openszz.entities;
 
 import java.io.PrintWriter;
 import java.util.Date;
@@ -7,8 +7,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import com.SZZ.jiraAnalyser.entities.Transaction.FileInfo;
-import com.SZZ.jiraAnalyser.git.Git;
+import com.szz.openszz.entities.Transaction.FileInfo;
+import com.szz.openszz.git.Git;
 
 import org.eclipse.jgit.revwalk.RevCommit;
 

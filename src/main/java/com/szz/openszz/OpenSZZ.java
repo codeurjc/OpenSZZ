@@ -1,23 +1,23 @@
-package com.SZZ.jiraAnalyser;
+package com.szz.openszz;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.SZZ.jiraAnalyser.entities.Link;
-import com.SZZ.jiraAnalyser.entities.Suspect;
-import com.SZZ.jiraAnalyser.entities.Transaction;
-import com.SZZ.jiraAnalyser.git.Git;
+import com.szz.openszz.entities.Link;
+import com.szz.openszz.entities.Suspect;
+import com.szz.openszz.entities.Transaction;
+import com.szz.openszz.git.Git;
 
-public class Application {
+public class OpenSZZ {
 
 	public URL sourceCodeRepository;
 
 	private Git git = null;
 	public boolean hasFinished = false;
 
-	public Application() {
+	public OpenSZZ() {
 
 	}
 

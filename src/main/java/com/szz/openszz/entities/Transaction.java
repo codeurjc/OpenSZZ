@@ -1,4 +1,4 @@
-package  com.SZZ.jiraAnalyser.entities;
+package  com.szz.openszz.entities;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

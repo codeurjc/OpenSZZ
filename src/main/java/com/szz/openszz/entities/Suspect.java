@@ -1,4 +1,4 @@
-package  com.SZZ.jiraAnalyser.entities;
+package  com.szz.openszz.entities;
 
 import java.sql.Timestamp;
 import java.util.Date;
