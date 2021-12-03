@@ -114,9 +114,7 @@ public class Git {
         p.waitFor();
 	}
 
-	private Transaction executeGitLog(String hash){
-
-		System.out.println("1");
+	public Transaction getCommitByHash(String hash){
 
 		String command = this.logCommand + " -p -1 " + hash;
 		ProcessBuilder pb = new ProcessBuilder(command.split(" "));
@@ -129,14 +127,11 @@ public class Git {
 			e1.printStackTrace();
 		}
 
-		System.out.println("2");
-
 		BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
 		String line = "";
 		String line1 = "";
 		String hashId = "";
 		Transaction transaction = null;
-		System.out.println("3");
 		try {
 			while ((line = br.readLine()) != null){
 				if (!line.isEmpty() && line.startsWith("\'")) {
@@ -149,7 +144,7 @@ public class Git {
 					List<FileInfo> filesAffected = new ArrayList<FileInfo>();
 					line1 = br.readLine();
 					if (line1 != null) {
-						while (!(line1).equals("")) {
+						while (line1 != null && !(line1).equals("")) {
 							int BUFFER_SIZE = 100000;
 							br.mark(BUFFER_SIZE);
 							if (!line1.startsWith("\'")) {
@@ -178,86 +173,15 @@ public class Git {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("4");
+
 		try {
 			p.waitFor();
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("5");
 
 		return transaction;
-	}
-
-	public Transaction getCommitByHash(String hash) throws Exception {
-
-		// Transaction t1 = executeGitLog(hash);
-
-		// System.out.println(t1);
-
-		// DELETE
-		executeToFile(this.logCommand, this.workingDirectory, this.logFile);
-
-		List<Transaction> transactions = this.getCommits();
-		for (Transaction t : transactions) {
-			if (t.getId().equals(hash)) {
-				return t;
-			}
-		}
-		return null;
-	}
-
-	private List<Transaction> getCommits() {
-		List<Transaction> transactions = new ArrayList<Transaction>();
-
-		String line = "";
-		String line1 = "";
-		String hashId = "";
-		try (BufferedReader br = new BufferedReader(new FileReader(logFile))) {
-			while ((line = br.readLine()) != null) {
-				if (!line.isEmpty() && line.startsWith("\'")) {
-					line = line.replaceAll("\'", "");
-					String[] array = line.split(";");
-					hashId = array[0];
-					String timestamp = array[1];
-					String author = array[2];
-					String comment = array[3];
-					List<FileInfo> filesAffected = new ArrayList<FileInfo>();
-					line1 = br.readLine();
-					if (line1 != null) {
-						while (!(line1).equals("")) {
-							int BUFFER_SIZE = 100000;
-							br.mark(BUFFER_SIZE);
-							if (!line1.startsWith("\'")) {
-								String[] subarray = line1.split("	");
-								String status = subarray[0];
-								String file = subarray[1];
-								FileInfo fileInfo = new FileInfo(status, file);
-								filesAffected.add(fileInfo);
-							} else {
-								br.reset();
-								break;
-							}
-							line1 = br.readLine();
-
-						}
-					}
-					Transaction transaction = new Transaction(
-							hashId,
-							timestamp,
-							author,
-							comment,
-							filesAffected);
-					transactions.add(transaction);
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-
-		}
-
-		return transactions;
 	}
 
 	/**
